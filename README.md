@@ -10,7 +10,7 @@ gcc -std=gnu99 -pthread grid.c serveur.c -o serveur.exe
 ./serveur.exe
 ```
 
-Pour le clien :
+Pour le client :
 ```
 gcc client.c -o client.exe
 ./client.exe <adress-serveur>
