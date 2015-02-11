@@ -4,9 +4,11 @@ client <adresse-serveur> <message-a-transmettre>
 ------------------------------------------------------------*/
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <linux/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <strings.h>
 #include <string.h>
 
 typedef struct sockaddr 	sockaddr;
@@ -21,23 +23,20 @@ int main(int argc, char **argv) {
     sockaddr_in adresse_locale; 	/* adresse de socket local */
     hostent *	ptr_host; 		/* info sur une machine hote */
     servent *	ptr_service; 		/* info sur service */
-    char 	buffer[256];
+    char 	buffer[2560];
     char *	prog; 			/* nom du programme */
     char *	host; 			/* nom de la machine distante */
-    char *	mesg; 			/* message envoyé */
      
-    if (argc != 3) {
-	perror("usage : client <adresse-serveur> <message-a-transmettre>");
+    if (argc != 2) {
+	perror("usage : client <adresse-serveur>");
 	exit(1);
     }
    
     prog = argv[0];
     host = argv[1];
-    mesg = argv[2];
     
     printf("nom de l'executable : %s \n", prog);
     printf("adresse du serveur  : %s \n", host);
-    printf("message envoye      : %s \n", mesg);
     
     if ((ptr_host = gethostbyname(host)) == NULL) {
 	perror("erreur : impossible de trouver le serveur a partir de son adresse.");
@@ -83,23 +82,36 @@ int main(int argc, char **argv) {
     
     printf("connexion etablie avec le serveur. \n");
     
-    printf("envoi d'un message au serveur. \n");
+    printf("envoi d'un message get au serveur. \n");
       
     /* envoi du message vers le serveur */
-    if ((write(socket_descriptor, mesg, strlen(mesg))) < 0) {
+    if ((write(socket_descriptor, "0", 2)) < 0) {
 	perror("erreur : impossible d'ecrire le message destine au serveur.");
 	exit(1);
     }
     
-    /* mise en attente du prgramme pour simuler un delai de transmission */
-    sleep(3);
-     
-    printf("message envoye au serveur. \n");
+    printf("message get envoye au serveur. \n");
                 
     /* lecture de la reponse en provenance du serveur */
     while((longueur = read(socket_descriptor, buffer, sizeof(buffer))) > 0) {
 	printf("reponse du serveur : \n");
 	write(1,buffer,longueur);
+    }
+
+    printf("envoi d'un message attack get au serveur. \n");
+      
+    /* envoi du message vers le serveur */
+    if ((write(socket_descriptor, "1A10", 4)) < 0) {
+    perror("erreur : impossible d'ecrire le message destine au serveur.");
+    exit(1);
+    }
+    
+    printf("message get envoye au serveur. \n");
+                
+    /* lecture de la reponse en provenance du serveur */
+    while((longueur = read(socket_descriptor, buffer, sizeof(buffer))) > 0) {
+    printf("reponse du serveur : \n");
+    write(1,buffer,longueur);
     }
     
     printf("\nfin de la reception.\n");

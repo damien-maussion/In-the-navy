@@ -3,16 +3,24 @@ Serveur à lancer avant le client
 ------------------------------------------------*/
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <linux/types.h> 	/* pour les sockets */
 #include <sys/socket.h>
 #include <netdb.h> 		/* pour hostent, servent */
-#include <string.h> 		/* pour bcopy, ... */  
+#include <strings.h> 		/* pour bcopy, ... */ 
+#include <pthread.h>
+
+
+#include "grid.h" 
+
 #define TAILLE_MAX_NOM 256
 
 typedef struct sockaddr sockaddr;
 typedef struct sockaddr_in sockaddr_in;
 typedef struct hostent hostent;
 typedef struct servent servent;
+
+Grid g;
 
 /*------------------------------------------------------*/
 void renvoi (int sock) {
@@ -33,9 +41,6 @@ void renvoi (int sock) {
     printf("message apres traitement : %s \n", buffer);
     
     printf("renvoi du message traite.\n");
-
-    /* mise en attente du prgramme pour simuler un delai de transmission */
-    sleep(20);
     
     write(sock,buffer,strlen(buffer)+1);
     
@@ -44,10 +49,44 @@ void renvoi (int sock) {
     return;
     
 }
-/*------------------------------------------------------*/
+
+void* prise_en_charge_client(void* soc)
+{
+    //cast du socket
+    int *tmp = (int*) soc;
+    int sd = *tmp;
+
+    char buffer[256];
+    int longueur;
+   
+    if ((longueur = read(sd, buffer, sizeof(buffer))) <= 0) 
+        return NULL;
+    
+    char c= buffer[0];
+    if (c=='0'){
+        write(sd,getOponentGrid(g),getGridStringLength());
+    }
+    else if (c=='1'){
+        PositionLetterDigit p;
+        p.letter = buffer[1];
+        char subbuff[3];
+        memcpy( subbuff, &buffer[2], 2 );
+        subbuff[4] = '\0';
+        p.y = atoi(subbuff);
+        attack(&g, p);
+        write(sd,getOponentGrid(g),getGridStringLength());
+    }
+
+    return NULL;
+    
+}
 
 /*------------------------------------------------------*/
-main(int argc, char **argv) {
+
+
+
+/*------------------------------------------------------*/
+int main(int argc, char **argv) {
   
     int 		socket_descriptor, 		/* descripteur de socket */
 			nouv_socket_descriptor, 	/* [nouveau] descripteur de socket */
@@ -110,6 +149,9 @@ main(int argc, char **argv) {
 
 //creation grille
 
+    init(&g);
+    printGrid(g);
+
     /* attente des connexions et traitement des donnees recues */
     for(;;) {
     
@@ -128,17 +170,18 @@ main(int argc, char **argv) {
 		/* traitement du message */
 		printf("reception d'un message.\n");
 		
-		switch(fork()){
-			case 0://fils
-				renvoi(nouv_socket_descriptor);
-				exit(0);
-			case -1://pb
-				perror("impossible de créer le fils");
-				exit(1);
-			default://père
-				close(nouv_socket_descriptor);
-				break;
-		}
+
+        pthread_t nouv_client;
+        if (pthread_create(&nouv_client, NULL, prise_en_charge_client, (int*)&nouv_socket_descriptor))
+        {
+            perror("Impossible creer thread");
+            return -1;
+        }
+
+        if (pthread_join(nouv_client, NULL)){
+            perror("Impossible joindre thread");
+            return -1;
+        }
     }
     
 }

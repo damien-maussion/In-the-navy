@@ -17,9 +17,9 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "grid.h"
+
 // enum resultAttack
-enum resultAttack {ERROR, REPEAT, WATER, TOUCH, SUNK, WIN};
-typedef enum resultAttack resultAttack;
 
 char * toString(resultAttack res){
 	switch (res){
@@ -41,17 +41,6 @@ char * toString(resultAttack res){
 
 // Position && PositionLetterDigit
 
-struct PositionLetterDigit{
-	char letter;
-	int y;
-};
-typedef struct PositionLetterDigit PositionLetterDigit;
-
-struct Position{
-	int x,y;
-};
-typedef struct Position Position;
-
 Position toPosition(PositionLetterDigit pld){
 	Position p;
 	p.x = pld.letter-'A';
@@ -59,21 +48,7 @@ Position toPosition(PositionLetterDigit pld){
 	return p;
 }
 
-// Batiment
-
-struct Batiment{
-	int id,length;
-};
-typedef struct Batiment Batiment;
-
 //Grid
-
-struct Grid{
-	int nbBoat;
-	int grid[GRID_WIDTH][GRID_HEIGHT];
-};
-typedef struct Grid Grid;
-
 
 /* Attention : 
 batiment.length < GRID_WIDTH &&
@@ -187,9 +162,13 @@ void print(Grid g){
 	}
 }*/
 
+int getGridStringLength(){
+	return ((GRID_WIDTH*2+6) * (GRID_HEIGHT+2)) +1;
+}
+
 char* getGrid(Grid g){
 
-	int str_length = ((GRID_WIDTH*2+6) * (GRID_HEIGHT+2));
+	int str_length = getGridStringLength();
 	char *str = malloc(str_length * sizeof(char));
 	strcat(str, "   |");
 
@@ -234,6 +213,7 @@ char* getGrid(Grid g){
 		}
 		strcat(str, "\n");
 	}
+	strcat(str, "\n\0");
 
 	return str;
 }
@@ -244,7 +224,7 @@ void printGrid(Grid g){
 
 char* getOponentGrid(Grid g){
 
-	int str_length = ((GRID_WIDTH*2+6) * (GRID_HEIGHT+2));
+	int str_length = getGridStringLength();
 	char *str = malloc(str_length * sizeof(char));
 	strcat(str, "   |");
 
@@ -342,20 +322,20 @@ resultAttack attack(Grid *g, PositionLetterDigit p){
 	return attackPos(g, toPosition(p));
 }
 
-
+/*
 int main(){
 	srand(time(NULL));
-/*
+
 	PositionLetterDigit pld = {letter:'A', y:4};
 	Position p = toPosition(pld);
 	printf("%d-%d\n", p.x, p.y);
-*/
+
 
 	Grid g;
 	init(&g);
-
 	printGrid(g);
 	printOponentGrid(g);
 	
 	return 0;
 }
+*/
