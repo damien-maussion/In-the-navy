@@ -26,7 +26,7 @@ char * toString(resultAttack res){
 		case ERROR: 
 			return "wrong position\n";
 		case REPEAT:
-			return "ulready done\n";
+			return "already done\n";
 		case WATER:
 			return "missed\n";
 		case TOUCH:

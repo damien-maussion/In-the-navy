@@ -1,0 +1,12 @@
+TODO
+
+
+	Problème taille trame get
+		=> {Ligne, id, nbL}
+		=> {Morceau, idTrame, tailleTotaleTrame, index}
+
+	Problème notifier tous les clients
+		
+		
+	Problème attack
+		=> char*({qui, resultat, grille}) 

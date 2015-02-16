@@ -6,7 +6,7 @@ Serveur à lancer avant le client
 #include <unistd.h>
 #include <linux/types.h> 	/* pour les sockets */
 #include <sys/socket.h>
-#include <netdb.h> 		/* pour hostent, servent */
+#include <netdb.h>			/* pour hostent, servent */
 #include <strings.h> 		/* pour bcopy, ... */ 
 #include <pthread.h>
 
@@ -20,42 +20,35 @@ typedef struct sockaddr_in sockaddr_in;
 typedef struct hostent hostent;
 typedef struct servent servent;
 
+typedef struct s_List Liste_clients;
+struct s_List
+{
+    Liste_clients *next;
+    int soc;
+};
+
 Grid g;
-
-/*------------------------------------------------------*/
-void renvoi (int sock) {
-
-    char buffer[256];
-    int longueur;
-   
-    if ((longueur = read(sock, buffer, sizeof(buffer))) <= 0) 
-    	return;
-    
-    printf("message lu : %s \n", buffer);
-    
-    buffer[0] = 'R';
-    buffer[1] = 'E';
-    buffer[longueur] = '#';
-    buffer[longueur+1] ='\0';
-    
-    printf("message apres traitement : %s \n", buffer);
-    
-    printf("renvoi du message traite.\n");
-    
-    write(sock,buffer,strlen(buffer)+1);
-    
-    printf("message envoye. \n");
-        
-    return;
-    
-}
+Liste_clients *clients = NULL;
 
 void* prise_en_charge_client(void* soc)
 {
     //cast du socket
     int *tmp = (int*) soc;
     int sd = *tmp;
-
+    printf("sd::%d\n",sd);
+/*************************************
+    Liste_clients **plist = &clients;
+    while (*plist){
+    	plist = &(*plist)->next;
+    }
+	Liste_clients *nouv_client = malloc(sizeof(nouv_client));
+	if (nouv_client)
+	{
+	   nouv_client->soc = sd;
+	   nouv_client->next = NULL;
+	}
+	*plist = nouv_client;
+/***************************************/
     char buffer[256];
     int longueur;
    
@@ -71,10 +64,23 @@ void* prise_en_charge_client(void* soc)
         p.letter = buffer[1];
         char subbuff[3];
         memcpy( subbuff, &buffer[2], 2 );
-        subbuff[4] = '\0';
+        subbuff[2] = '\0';
         p.y = atoi(subbuff);
         attack(&g, p);
+        printGrid(g);
+        
         write(sd,getOponentGrid(g),getGridStringLength());
+/*************************************       
+        Liste_clients **parcours = &clients;
+        while(*parcours){
+        	printf("cc");
+        	int *tmp2 = (int*) &(*parcours)->soc;
+        	sd = *tmp2;
+			
+        	parcours = &(*parcours)->next;
+        	printf("%d\n",sd);
+        }
+/*************************************/
     }
 
     return NULL;
@@ -88,16 +94,16 @@ void* prise_en_charge_client(void* soc)
 /*------------------------------------------------------*/
 int main(int argc, char **argv) {
   
-    int 		socket_descriptor, 		/* descripteur de socket */
-			nouv_socket_descriptor, 	/* [nouveau] descripteur de socket */
-			longueur_adresse_courante; 	/* longueur d'adresse courante d'un client */
-    sockaddr_in 	adresse_locale, 		/* structure d'adresse locale*/
-			adresse_client_courant; 	/* adresse client courant */
-    hostent*		ptr_hote; 			/* les infos recuperees sur la machine hote */
-    servent*		ptr_service; 			/* les infos recuperees sur le service de la machine */
-    char 		machine[TAILLE_MAX_NOM+1]; 	/* nom de la machine locale */
+    int socket_descriptor;				/* descripteur de socket */
+	int nouv_socket_descriptor;			/* [nouveau] descripteur de socket */
+	int longueur_adresse_courante;		/* longueur d'adresse courante d'un client */
+    sockaddr_in adresse_locale;			/* structure d'adresse locale*/
+	sockaddr_in	adresse_client_courant;	/* adresse client courant */
+    hostent* ptr_hote; 					/* les infos recuperees sur la machine hote */
+    servent* ptr_service; 				/* les infos recuperees sur le service de la machine */
+    char machine[TAILLE_MAX_NOM+1]; 	/* nom de la machine locale */
     
-    gethostname(machine,TAILLE_MAX_NOM);		/* recuperation du nom de la machine */
+    gethostname(machine,TAILLE_MAX_NOM);	/* recuperation du nom de la machine */
     
     /* recuperation de la structure d'adresse en utilisant le nom */
     if ((ptr_hote = gethostbyname(machine)) == NULL) {
@@ -178,11 +184,14 @@ int main(int argc, char **argv) {
             return -1;
         }
 
+		/*
         if (pthread_join(nouv_client, NULL)){
             perror("Impossible joindre thread");
             return -1;
         }
+        */
     }
     
 }
+
 
