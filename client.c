@@ -13,26 +13,20 @@ client <adresse-serveur> <message-a-transmettre>
 #include <pthread.h>
 #include <stdbool.h>
 
+#include "grid.h"
+#include "annexe.c"
+
 typedef struct sockaddr 	sockaddr;
 typedef struct sockaddr_in 	sockaddr_in;
 typedef struct hostent 		hostent;
 typedef struct servent 		servent;
-
-void get_grille_courante(int socket_descriptor, char* buffer, long taille){
-	int longueur = read(socket_descriptor, buffer, taille);
-	if(longueur > 0){
-		printf("reponse du serveur : \n");
-		write(1,buffer,longueur);
-	}
-}
-
 
 void* interaction_client(void* ad)
 {
 	//cast adresse_locale
 	sockaddr_in *tmp = (sockaddr_in*) (ad);
 	sockaddr_in adresse_locale = (sockaddr_in) (*tmp) ;
-	
+
 	bool play = true;
 	int socket_descriptor;
 	char buffer[2560];
@@ -64,8 +58,47 @@ void* interaction_client(void* ad)
 			exit(1);
 		}
 		
-		get_grille_courante(socket_descriptor, buffer, sizeof(buffer));
+		//get_grille_courante(socket_descriptor, buffer, sizeof(buffer));
+        /*
+        int longueur = read(socket_descriptor, buffer, sizeof(buffer));
+        if(longueur > 0){
+            printf("reponse du serveur : \n");
+            Trame t = deserializeTrame(buffer);
+            printf("%s", t.data);
+        }
+        */
 	}
+}
+
+
+TrameBuffer tb = {NULL,-1,0,false};
+pthread_mutex_t mutex_trame_buffer;
+
+void* listen_server(void* args)
+{
+    //cast
+    args_traitement *args_t = args;
+    printf("lis beg ");
+
+    char buffer[TAILLE_MAX_TRAME];   
+    if (read(args_t->soc, buffer, sizeof(buffer)) > 0){
+        //printf("reponse du serveur : \n");
+        Trame t = deserializeTrame(buffer);
+
+        pthread_mutex_lock(&mutex_trame_buffer);
+        receveTrame(&tb, t);
+        pthread_mutex_unlock(&mutex_trame_buffer);
+        
+        //printf("Trame data : \n%s\nidTtrame : %d\tindex: %d\ttaille : %d\n", t.data, t.idTrame, t.index, t.taille);
+
+        //printf("TB data : \n%s\nidTtrame : %d\tnbTrameReceved: %d\tfinish : %d\n", tb.data, tb.idTrame, tb.nbTrameReceved, tb.finish);
+
+        if (tb.finish){
+            printf("reponse : \n\n%s\n", tb.data);
+        }
+        //write(1,t.data,longueur);
+    }
+    printf(" lis end\n");
 }
 
 int main(int argc, char **argv) {
@@ -117,7 +150,7 @@ int main(int argc, char **argv) {
     /* SOLUTION 2 : utiliser un nouveau numero de port */
     adresse_locale.sin_port = htons(5000);
     /*-----------------------------------------------------------*/
-    
+
     printf("numero de port pour la connexion au serveur : %d \n", ntohs(adresse_locale.sin_port));
     
     /* creation de la socket */
@@ -133,36 +166,55 @@ int main(int argc, char **argv) {
     }
     
     printf("connexion etablie avec le serveur. \n");
+
+    printf("Lancement thread d'écoute sur le port 5001. \n");
+
+    args_lance_listener args;
+    args.ad = adresse_locale;
+    args.ad.sin_port = htons(5001);
+    args.traitement = listen_server;
+
+    if (pthread_mutex_init(&mutex_trame_buffer, NULL) != 0)
+    {
+        perror("\n mutex_trame_buffer init failed\n");
+        return 1;
+    }
+
+    pthread_t thread_listen;
+    if (pthread_create(&thread_listen, NULL, lance_listener, (args_lance_listener*) &args))
+    {
+        perror("Impossible creer thread listen");
+        return -1;
+    }
     
     printf("envoi d'un message get au serveur. \n");
       
     /* envoi du message vers le serveur */
     if ((write(socket_descriptor, "0", 2)) < 0) {
 		perror("erreur : impossible d'ecrire le message destine au serveur.");
-		exit(1);
+        exit(1);
     }
     
+    close(socket_descriptor);
     printf("message get envoye au serveur. \n");
     
-    get_grille_courante(socket_descriptor, buffer, sizeof(buffer));
-	
-    printf("Lancement thread attack. \n");
+    //get_grille_courante(socket_descriptor, buffer, sizeof(buffer));
     
-   	pthread_t nouv_client;
+    printf("Lancement thread attack. \n");
+    args.ad.sin_port = htons(5000);
+    
+    pthread_t nouv_client;
     if (pthread_create(&nouv_client, NULL, interaction_client, (sockaddr_in*) &adresse_locale))
     {
         perror("Impossible creer thread");
         return -1;
     }
-	
+    
     if (pthread_join(nouv_client, NULL)){
         perror("Impossible joindre thread");
         return -1;
     }
-    
-    close(socket_descriptor);
-    
-    printf("connexion avec le serveur fermee, fin du programme.\n");
+    pthread_mutex_destroy(&mutex_trame_buffer);
     
     exit(0);
     

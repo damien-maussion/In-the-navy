@@ -76,3 +76,29 @@ bool isLast(Grid g, Position p);
 
 resultAttack attackPos(Grid *g, Position p);
 resultAttack attack(Grid *g, PositionLetterDigit p);
+
+
+#define TAILLE_MAX_DATA_TRAME 256
+#define TAILLE_MAX_TRAME TAILLE_MAX_DATA_TRAME+3*sizeof(int)
+
+struct Trame{
+    char data[TAILLE_MAX_DATA_TRAME];
+    int idTrame;
+    int index;
+    int taille;
+};
+typedef struct Trame Trame;
+
+char* serializeTrame(Trame t);
+Trame deserializeTrame(char * str);
+
+struct TrameBuffer{
+	char* data;
+	//char data[2000];
+	int idTrame;
+	int nbTrameReceved;
+	bool finish;
+};
+typedef struct TrameBuffer TrameBuffer;
+
+void receveTrame(TrameBuffer *tb, Trame t);

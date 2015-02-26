@@ -1,21 +1,3 @@
-#define GRID_WIDTH 10
-#define GRID_HEIGHT 10
-
-#define RESET   "\033[0m"
-#define BLACK   "\033[30m"      /* Black */
-#define RED     "\033[31m"      /* Red */
-#define GREEN   "\033[32m"      /* Green */
-#define YELLOW  "\033[33m"      /* Yellow */
-#define BLUE    "\033[34m"      /* Blue */
-#define MAGENTA "\033[35m"      /* Magenta */
-#define CYAN    "\033[36m"      /* Cyan */
-#define WHITE   "\033[37m"      /* White */
-
-#include <stdio.h>
-#include <stdlib.h>  
-#include <time.h>
-#include <string.h>
-#include <stdbool.h>
 
 #include "grid.h"
 
@@ -163,7 +145,9 @@ void print(Grid g){
 }*/
 
 int getGridStringLength(){
-	return ((GRID_WIDTH*2+6) * (GRID_HEIGHT+2)) +1;
+	int nb_rows_display = GRID_HEIGHT+2;
+	int max_row_size = 4 +(2 + 10)*GRID_WIDTH +1;  // 4 : "i  |", 2: "0 ", 10 : 2*strlen(CYAN), 1: "\n"
+	return ( max_row_size * nb_rows_display) +1;
 }
 
 char* getGrid(Grid g){
@@ -339,3 +323,49 @@ int main(){
 	return 0;
 }
 */
+
+char* serializeTrame(Trame t){
+    char * str = malloc( TAILLE_MAX_DATA_TRAME * sizeof(char) + 3 * sizeof(int));
+    
+    memcpy(str, t.data, TAILLE_MAX_DATA_TRAME * sizeof(char));
+    int offset=TAILLE_MAX_DATA_TRAME;
+    
+    memcpy(str+offset, &(t.idTrame), sizeof(int));
+    offset+=sizeof(int);
+
+    memcpy(str+offset, &(t.index), sizeof(int));
+    offset+=sizeof(int);
+
+    memcpy(str+offset, &(t.taille), sizeof(int));
+    offset+=sizeof(int);
+
+    return str;
+}
+
+Trame deserializeTrame(char * str){
+    Trame t;
+
+    memcpy(&(t.data), str, TAILLE_MAX_DATA_TRAME* sizeof(char));
+    memcpy(&(t.idTrame), str+ TAILLE_MAX_DATA_TRAME, sizeof(int));
+    memcpy(&(t.index), str + TAILLE_MAX_DATA_TRAME + sizeof(int), sizeof(int));
+    memcpy(&(t.taille), str + TAILLE_MAX_DATA_TRAME + 2 * sizeof(int), sizeof(int));
+
+    return t;
+}
+
+void receveTrame(TrameBuffer *tb, Trame t){
+	printf("trame %d-%d\n", t.idTrame, t.index);
+	if (tb->idTrame < t.idTrame){
+		//free(tb->data);
+		printf("taille : %d\n", t.taille);
+		tb->data = malloc( t.taille *sizeof(char));
+		tb->idTrame = t.idTrame;
+		tb->nbTrameReceved = 0;
+		tb->finish = false;
+	}
+	
+	memcpy( &(tb->data[t.index]), &(t.data), TAILLE_MAX_DATA_TRAME*sizeof(char));
+	tb->nbTrameReceved++;
+	if (tb->nbTrameReceved*TAILLE_MAX_DATA_TRAME >= t.taille)
+		tb->finish = true;
+}
