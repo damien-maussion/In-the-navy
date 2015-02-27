@@ -356,7 +356,7 @@ Trame deserializeTrame(char * str){
 void receveTrame(TrameBuffer *tb, Trame t){
 	printf("trame %d-%d\n", t.idTrame, t.index);
 	if (tb->idTrame < t.idTrame){
-		//free(tb->data);
+		free(tb->data);
 		printf("taille : %d\n", t.taille);
 		tb->data = malloc( t.taille *sizeof(char));
 		tb->idTrame = t.idTrame;

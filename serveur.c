@@ -111,7 +111,7 @@ void* prise_en_charge_client(void* args)
         //write(args_t->soc,getOponentGrid(g),getGridStringLength());
         char *str_grid = getOponentGrid(g);
         sendResponse(str_grid,(int) strlen(str_grid));
-        delete str_grid;
+        //delete str_grid;
     }
     else if (c=='1'){
         PositionLetterDigit p;
@@ -129,7 +129,7 @@ void* prise_en_charge_client(void* args)
         //sendResponse(getOponentGrid(g),getGridStringLength());
         char *str_grid = getOponentGrid(g);
         sendResponse(str_grid,(int) strlen(str_grid));
-        delete str_grid;
+        //delete str_grid;
     }
 
     return NULL;

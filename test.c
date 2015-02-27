@@ -36,36 +36,106 @@ int main(){
 		strcat(str2, "c");
 	str2[1499]='\0';
 	test(str2, strlen(str2));
-	free(tb.data);
+	//free(tb.data);
 	free(str2);
 
-	printf("1\n");
-	char *str3= (char*) malloc(1500* sizeof(char));
-	if (str3==NULL) exit (1);
-	printf("2\n");
+	str2= (char*) malloc(1500* sizeof(char));
+	if (str2==NULL) exit (1);
 	for (int i=0;i<1499;i++)
-		str3[i]='d';
-	str3[1499]='\0';
-	test(str3, strlen(str3));
-	free(tb.data);
-	free(str3);
-
-	char str[1500]="";
-	for (int i=0;i<1500;i++)
-		strcat(str, "a");
-	test(str, strlen(str));
-	free(tb.data);
-
-	for (int i=0;i<1500;i++)
-		str[i] = 'b';
-	test(str, strlen(str));
-	free(tb.data);
-
-	str2= malloc(1500* sizeof(char));
-	for (int i=0;i<1500;i++)
-		strcat(str2, "d");
+		strcat(str2, "c");
+	str2[1499]='\0';
 	test(str2, strlen(str2));
-	free(tb.data);
+	//free(tb.data);
+	free(str2);
+
+str2= (char*) malloc(1500* sizeof(char));
+	if (str2==NULL) exit (1);
+	for (int i=0;i<1499;i++)
+		strcat(str2, "c");
+	str2[1499]='\0';
+	test(str2, strlen(str2));
+	//free(tb.data);
+	free(str2);
+
+str2= (char*) malloc(1500* sizeof(char));
+	if (str2==NULL) exit (1);
+	for (int i=0;i<1499;i++)
+		strcat(str2, "c");
+	str2[1499]='\0';
+	test(str2, strlen(str2));
+	//free(tb.data);
+	free(str2);
+
+str2= (char*) malloc(1500* sizeof(char));
+	if (str2==NULL) exit (1);
+	for (int i=0;i<1499;i++)
+		strcat(str2, "c");
+	str2[1499]='\0';
+	test(str2, strlen(str2));
+	//free(tb.data);
+	free(str2);
+
+str2= (char*) malloc(1500* sizeof(char));
+	if (str2==NULL) exit (1);
+	for (int i=0;i<1499;i++)
+		strcat(str2, "c");
+	str2[1499]='\0';
+	test(str2, strlen(str2));
+	//free(tb.data);
+	free(str2);
+
+str2= (char*) malloc(1500* sizeof(char));
+	if (str2==NULL) exit (1);
+	for (int i=0;i<1499;i++)
+		strcat(str2, "c");
+	str2[1499]='\0';
+	test(str2, strlen(str2));
+	//free(tb.data);
+	free(str2);
+
+str2= (char*) malloc(1500* sizeof(char));
+	if (str2==NULL) exit (1);
+	for (int i=0;i<1499;i++)
+		strcat(str2, "c");
+	str2[1499]='\0';
+	test(str2, strlen(str2));
+	//free(tb.data);
+	free(str2);
+
+str2= (char*) malloc(1500* sizeof(char));
+	if (str2==NULL) exit (1);
+	for (int i=0;i<1499;i++)
+		strcat(str2, "c");
+	str2[1499]='\0';
+	test(str2, strlen(str2));
+	//free(tb.data);
+	free(str2);
+
+str2= (char*) malloc(1500* sizeof(char));
+	if (str2==NULL) exit (1);
+	for (int i=0;i<1499;i++)
+		strcat(str2, "c");
+	str2[1499]='\0';
+	test(str2, strlen(str2));
+	//free(tb.data);
+	free(str2);
+
+str2= (char*) malloc(1500* sizeof(char));
+	if (str2==NULL) exit (1);
+	for (int i=0;i<1499;i++)
+		strcat(str2, "c");
+	str2[1499]='\0';
+	test(str2, strlen(str2));
+	//free(tb.data);
+	free(str2);
+
+str2= (char*) malloc(1500* sizeof(char));
+	if (str2==NULL) exit (1);
+	for (int i=0;i<1499;i++)
+		strcat(str2, "c");
+	str2[1499]='\0';
+	test(str2, strlen(str2));
+	//free(tb.data);
 	free(str2);
 	
 	return 0;
