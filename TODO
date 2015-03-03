@@ -1,6 +1,6 @@
 TODO
 
-	REMPLACER STR* => CHAR[gRID_w * grid_h]
+	REMPLACER STR* => CHAR[gRID_w * grid_h]   => Fait
 
 serveur crée
 

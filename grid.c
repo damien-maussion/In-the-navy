@@ -356,16 +356,62 @@ Trame deserializeTrame(char * str){
 void receveTrame(TrameBuffer *tb, Trame t){
 	printf("trame %d-%d\n", t.idTrame, t.index);
 	if (tb->idTrame < t.idTrame){
-		free(tb->data);
+		//free(tb->data);
 		printf("taille : %d\n", t.taille);
-		tb->data = malloc( t.taille *sizeof(char));
+		//tb->data = malloc( t.taille *sizeof(char));
 		tb->idTrame = t.idTrame;
 		tb->nbTrameReceved = 0;
 		tb->finish = false;
 	}
 	
-	memcpy( &(tb->data[t.index]), &(t.data), TAILLE_MAX_DATA_TRAME*sizeof(char));
+	memcpy( &(tb->data[t.index]), t.data, TAILLE_MAX_DATA_TRAME*sizeof(char));
 	tb->nbTrameReceved++;
 	if (tb->nbTrameReceved*TAILLE_MAX_DATA_TRAME >= t.taille)
 		tb->finish = true;
+}
+
+
+char* serializeResponseGet(ResponseGet r){
+	char * str = malloc( sizeof(char) + sizeof(ResponseGet));
+    
+    str[0] = 0;
+    memcpy(str+sizeof(char), r.grid, sizeof(int[GRID_WIDTH][GRID_HEIGHT]));
+
+    return str;
+}
+ResponseGet deserializeResponseGet(char* str){
+	ResponseGet res;
+	memcpy(res.grid, str+sizeof(char), sizeof(int[GRID_WIDTH][GRID_HEIGHT]));
+	return res;
+}
+
+char* serializeResponseAttack(ResponseAttack r){
+	char * str = malloc( sizeof(char) + sizeof(ResponseAttack));
+    
+    str[0] = 1;
+    int offset = sizeof(char);
+
+    memcpy(str+offset, r.grid, sizeof(int[GRID_WIDTH][GRID_HEIGHT]));
+   	offset += sizeof(int[GRID_WIDTH][GRID_HEIGHT]);
+
+    memcpy(str+offset, &(r.result), sizeof(resultAttack));
+    offset+= sizeof(resultAttack);
+
+    memcpy(str+offset, &(r.who), sizeof(in_addr));
+
+    return str;
+}
+ResponseAttack deserializeResponseAttack(char *str){
+	ResponseAttack r;
+
+	int offset = sizeof(char);
+	memcpy(r.grid, str+offset, sizeof(int[GRID_WIDTH][GRID_HEIGHT]));
+	offset += sizeof(int[GRID_WIDTH][GRID_HEIGHT]);
+
+	memcpy(&(r.result), str+offset, sizeof(resultAttack));
+	offset += sizeof(resultAttack);
+
+	memcpy(&(r.who), str+offset, sizeof(in_addr));
+
+	return r;
 }

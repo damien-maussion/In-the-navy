@@ -17,6 +17,15 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include <linux/types.h> 	/* pour les sockets */
+#include <sys/socket.h>
+#include <netdb.h>
+
+#include <netinet/in.h>
+#include <netinet/ip.h>
+
+typedef struct in_addr in_addr;
+
 // enum resultAttack
 enum resultAttack {ERROR, REPEAT, WATER, TOUCH, SUNK, WIN};
 typedef enum resultAttack resultAttack;
@@ -80,6 +89,27 @@ resultAttack attack(Grid *g, PositionLetterDigit p);
 
 #define TAILLE_MAX_DATA_TRAME 256
 #define TAILLE_MAX_TRAME TAILLE_MAX_DATA_TRAME+3*sizeof(int)
+#define TAILLE_RESPONSE sizeof(ResponseAttack)
+
+
+struct ResponseGet{
+	int grid[GRID_WIDTH][GRID_HEIGHT];
+};
+typedef struct ResponseGet ResponseGet;
+
+char* serializeResponseGet(ResponseGet r);
+ResponseGet deserializeResponseGet(char* str);
+
+struct ResponseAttack{
+	resultAttack result;
+	int grid[GRID_WIDTH][GRID_HEIGHT];
+	in_addr who;					//IP attaquant 
+};
+typedef struct ResponseAttack ResponseAttack;
+
+char* serializeResponseAttack(ResponseAttack r);
+ResponseAttack deserializeResponseAttack(char *str);
+
 
 struct Trame{
     char data[TAILLE_MAX_DATA_TRAME];
@@ -93,8 +123,7 @@ char* serializeTrame(Trame t);
 Trame deserializeTrame(char * str);
 
 struct TrameBuffer{
-	char* data;
-	//char data[2000];
+	char data[sizeof(ResponseAttack)+sizeof(char)];
 	int idTrame;
 	int nbTrameReceved;
 	bool finish;
