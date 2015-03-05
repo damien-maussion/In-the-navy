@@ -1,32 +1,14 @@
-TODO
 
-	REMPLACER STR* => CHAR[gRID_w * grid_h]   => Fait
+Problèmes/trucs à voir
 
-serveur crée
+	annexe.c:lance_listener remettre les threads pour traiter les messages
 
-	struct t{
-		CHAR[gRID_w * grid_h] grid = getOponentGrid;
-		char result;
-		( char[4] who;)
-	}
-	
-	send( serializeTrame(t), int taille); 
+	Mettre des mutex (affichages, acces grid en attack...)
 
-TrameBuffe => 
+	revoir broadcast => eviter reconnexion
 
-		struct TrameBuffer{
-			char data[result + who + gRID_w * grid_h];
-			//char data[2000];
-			int idTrame;
-			int nbTrameReceved;
-			bool finish;
-		};
+	Mieux afficher les reponses (result, who)
 
- 	=> modif receiveTrame
 
-client 	 recoit deserialise(CHAR[result + who + gRID_w * grid_h]) => t
-		printOponentGrid(t);
 
 Virer exit(1) bad connection send Trame
-
-char[]

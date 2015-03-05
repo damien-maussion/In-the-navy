@@ -71,14 +71,14 @@ void* interaction_client(void* ad)
 }
 
 
-TrameBuffer tb = {NULL,-1,0,false};
+TrameBuffer tb;
 pthread_mutex_t mutex_trame_buffer;
 
 void* listen_server(void* args)
 {
     //cast
     args_traitement *args_t = args;
-    printf("lis beg ");
+    printf("lis beg \n");
 
     char buffer[TAILLE_MAX_TRAME];   
     if (read(args_t->soc, buffer, sizeof(buffer)) > 0){
@@ -93,8 +93,18 @@ void* listen_server(void* args)
 
         //printf("TB data : \n%s\nidTtrame : %d\tnbTrameReceved: %d\tfinish : %d\n", tb.data, tb.idTrame, tb.nbTrameReceved, tb.finish);
 
+        printf("%d\n",tb.finish );
         if (tb.finish){
-            printf("reponse : \n\n%s\n", tb.data);
+            if (tb.data[0]==0){
+                ResponseGet res = deserializeResponseGet(tb.data);
+                printf("Grille Get:\n");
+                printOponentGrid(res.grid);
+            }
+            else{
+                ResponseAttack res = deserializeResponseAttack(tb.data);
+                printf("Grille attack:\n");
+                printOponentGrid(res.grid);
+            }
         }
         //write(1,t.data,longueur);
     }
@@ -169,6 +179,7 @@ int main(int argc, char **argv) {
 
     printf("Lancement thread d'écoute sur le port 5001. \n");
 
+    tb.idTrame=-1;
     args_lance_listener args;
     args.ad = adresse_locale;
     args.ad.sin_port = htons(5001);
@@ -186,6 +197,7 @@ int main(int argc, char **argv) {
         perror("Impossible creer thread listen");
         return -1;
     }
+    sleep(1);
     
     printf("envoi d'un message get au serveur. \n");
       
@@ -195,7 +207,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
     
-    close(socket_descriptor);
+    //close(socket_descriptor);
     printf("message get envoye au serveur. \n");
     
     //get_grille_courante(socket_descriptor, buffer, sizeof(buffer));

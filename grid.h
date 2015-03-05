@@ -75,8 +75,13 @@ int getGridStringLength();
 char* getGrid(Grid g);
 void printGrid(Grid g);
 
-char* getOponentGrid(Grid g);
-void printOponentGrid(Grid g);
+//char* getOponentGrid(Grid g);
+//void printOponentGrid(Grid g);
+
+void getOponentGrid(Grid g, int tab[GRID_WIDTH][GRID_HEIGHT]);
+void printOponentGrid(int tab[GRID_WIDTH][GRID_HEIGHT]);
+
+
 
 bool isValidPosition(Position p);
 
@@ -88,8 +93,8 @@ resultAttack attack(Grid *g, PositionLetterDigit p);
 
 
 #define TAILLE_MAX_DATA_TRAME 256
-#define TAILLE_MAX_TRAME TAILLE_MAX_DATA_TRAME+3*sizeof(int)
-#define TAILLE_RESPONSE sizeof(ResponseAttack)
+#define TAILLE_MAX_TRAME TAILLE_MAX_DATA_TRAME + 3 * sizeof(int)
+#define TAILLE_RESPONSE sizeof(ResponseAttack) + sizeof(int)
 
 
 struct ResponseGet{
@@ -123,11 +128,11 @@ char* serializeTrame(Trame t);
 Trame deserializeTrame(char * str);
 
 struct TrameBuffer{
-	char data[sizeof(ResponseAttack)+sizeof(char)];
+	char data[2*TAILLE_RESPONSE];
 	int idTrame;
 	int nbTrameReceved;
 	bool finish;
 };
 typedef struct TrameBuffer TrameBuffer;
 
-void receveTrame(TrameBuffer *tb, Trame t);
+void receveTrame(TrameBuffer *tbuf, Trame t);

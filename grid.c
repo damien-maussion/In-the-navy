@@ -206,6 +206,7 @@ void printGrid(Grid g){
 	printf("%s\n", getGrid(g));
 }
 
+/*
 char* getOponentGrid(Grid g){
 
 	int str_length = getGridStringLength();
@@ -255,6 +256,51 @@ char* getOponentGrid(Grid g){
 
 void printOponentGrid(Grid g){
 	printf("%s\n", getOponentGrid(g));
+}
+*/
+
+void getOponentGrid(Grid g, int tab[GRID_WIDTH][GRID_HEIGHT]){
+	for (int i=0; i<GRID_WIDTH;i++){
+		for (int j=0; j<GRID_HEIGHT;j++){
+			if (g.grid[i][j] == -1)
+				tab[i][j] = -1;				//water touched
+			else if (g.grid[i][j] < -1)	
+				tab[i][j] = -2;				//touched
+			else
+				tab[i][j] = 0;				//boat or water not touched 
+		}
+	}
+}
+
+void printOponentGrid(int tab[GRID_WIDTH][GRID_HEIGHT]){
+	printf("   |");
+
+	for (int j =0;j<GRID_WIDTH;j++){
+		printf("%c ", ('A'+j));
+	}
+
+	printf("\n----");
+	for (int j =0;j<GRID_WIDTH;j++){
+		printf("--");
+	}
+	printf("\n");
+
+	for (int i=0;i<GRID_HEIGHT;i++){
+		printf("%02d |",(i+1));
+
+		for (int j =0;j<GRID_WIDTH;j++){
+			if (tab[j][i]==-1){
+				printf("%s%s%s", CYAN, "F ", RESET);
+			}
+			else if (tab[j][i]<-1){
+				printf("%s%s%s", RED, "X ", RESET);
+			}
+			else{
+				printf("O ");
+			}
+		}
+		printf("\n");
+	}
 }
 
 bool isValidPosition(Position p){
@@ -353,21 +399,26 @@ Trame deserializeTrame(char * str){
     return t;
 }
 
-void receveTrame(TrameBuffer *tb, Trame t){
+void receveTrame(TrameBuffer *tbuf, Trame t){
 	printf("trame %d-%d\n", t.idTrame, t.index);
-	if (tb->idTrame < t.idTrame){
-		//free(tb->data);
-		printf("taille : %d\n", t.taille);
-		//tb->data = malloc( t.taille *sizeof(char));
-		tb->idTrame = t.idTrame;
-		tb->nbTrameReceved = 0;
-		tb->finish = false;
-	}
+	//printf("receveTrame : idTrame : %d, nbTrameReceved: %d, finish: %d\n", tbuf->idTrame, tbuf->nbTrameReceved, tbuf->finish);
 	
-	memcpy( &(tb->data[t.index]), t.data, TAILLE_MAX_DATA_TRAME*sizeof(char));
-	tb->nbTrameReceved++;
-	if (tb->nbTrameReceved*TAILLE_MAX_DATA_TRAME >= t.taille)
-		tb->finish = true;
+	if (tbuf->idTrame < t.idTrame) {
+		//printf("taille : %d\n", t.taille);
+		tbuf->idTrame = t.idTrame;
+		tbuf->nbTrameReceved = 0;
+		tbuf->finish = false;
+	}
+	//printf("receveTrame 2: idTrame : %d, nbTrameReceved: %d, finish: %d\n", tbuf->idTrame, tbuf->nbTrameReceved, tbuf->finish);
+	
+	//strncpy( tbuf->data+ t.index, t.data, TAILLE_MAX_DATA_TRAME);
+	memcpy( tbuf->data + t.index, t.data, TAILLE_MAX_DATA_TRAME);
+	
+	//printf("receveTrame 3: idTrame : %d, nbTrameReceved: %d, finish: %d\n", tbuf->idTrame, tbuf->nbTrameReceved, tbuf->finish);
+	tbuf->nbTrameReceved++;
+	//printf("receveTrame 4: idTrame : %d, nbTrameReceved: %d, finish: %d\n", tbuf->idTrame, tbuf->nbTrameReceved, tbuf->finish);
+	tbuf->finish = tbuf->nbTrameReceved * TAILLE_MAX_DATA_TRAME >= t.taille;
+	//printf("receveTrame after : idTrame : %d, nbTrameReceved: %d, finish: %d\n", tbuf->idTrame, tbuf->nbTrameReceved, tbuf->finish);
 }
 
 

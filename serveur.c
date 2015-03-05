@@ -109,8 +109,12 @@ void* prise_en_charge_client(void* args)
         printf("get\n");
 
         //write(args_t->soc,getOponentGrid(g),getGridStringLength());
-        char *str_grid = getOponentGrid(g);
-        sendResponse(str_grid,(int) strlen(str_grid));
+
+        ResponseGet res;
+        getOponentGrid(g, res.grid);
+        //char *str_grid = getOponentGrid(g);
+        sendResponse(serializeResponseGet(res),TAILLE_RESPONSE);
+
         //delete str_grid;
     }
     else if (c=='1'){
@@ -120,16 +124,24 @@ void* prise_en_charge_client(void* args)
         memcpy( subbuff, &buffer[2], 2 );
         subbuff[2] = '\0';
         p.y = atoi(subbuff);
-        attack(&g, p);
-        printGrid(g);
         
-        printf("attack\n");
-
+        /*
         //write(args_t->soc,getOponentGrid(g),getGridStringLength());
         //sendResponse(getOponentGrid(g),getGridStringLength());
         char *str_grid = getOponentGrid(g);
         sendResponse(str_grid,(int) strlen(str_grid));
         //delete str_grid;
+        */
+
+        ResponseAttack res;
+        res.result = attack(&g, p);
+        res.who = args_t->ad.sin_addr;
+        getOponentGrid(g, res.grid);
+        printGrid(g);
+        
+        printf("attack\n");
+
+        sendResponse(serializeResponseAttack(res), TAILLE_RESPONSE);
     }
 
     return NULL;
@@ -154,8 +166,6 @@ int main(int argc, char **argv) {
     char machine[TAILLE_MAX_NOM+1]; 	/* nom de la machine locale */
     
     gethostname(machine,TAILLE_MAX_NOM);	/* recuperation du nom de la machine */
-
-    printf("%d\n\n", getGridStringLength());
     
     /* recuperation de la structure d'adresse en utilisant le nom */
     if ((ptr_hote = gethostbyname(machine)) == NULL) {

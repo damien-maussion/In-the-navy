@@ -3,7 +3,7 @@
 
 #include "grid.h"
 
-TrameBuffer tb = {"",-1,0,false};
+TrameBuffer tb;
 int idTrame=0;
 
 void test(char * str, int length){
@@ -20,6 +20,8 @@ void test(char * str, int length){
         offset+= TAILLE_MAX_DATA_TRAME;
         //write(sd,serializeTrame(t),TAILLE_MAX_DATA_TRAME + 3*sizeof(int));
        	receveTrame(&tb, t);
+       	printf("test : idTrame : %d, nbTrameReceved: %d, finish: %d\n", tb.idTrame, tb.nbTrameReceved, tb.finish);
+
        	/*
 		if (tb.finish){
 			printf("%s\n", tb.data);
@@ -28,16 +30,57 @@ void test(char * str, int length){
     idTrame++;
 }
 
+struct A{
+	int a;
+};
+typedef struct A A;
+void f(A *a){
+	a->a++;
+}
+A a;
+
 int main(){
 
-	ResponseGet res;
+	Grid g;
+	init(&g);
 
+	//a = (A*) malloc(sizeof(A));
+	a.a=0;
+
+	//tb = (TrameBuffer*) malloc(sizeof(TrameBuffer));
+	tb.idTrame = -1;
+
+	for (int i=1; i<=10; i++){
+		f(&a);
+		
+		PositionLetterDigit pos = {letter: 'A', y: i};
+		attack(&g,pos);
+
+		ResponseGet res;
+		getOponentGrid(g, res.grid);
+
+		test(serializeResponseGet(res), TAILLE_RESPONSE);
+
+		printf("main : idTrame : %d, nbTrameReceved: %d, finish: %d\n", tb.idTrame, tb.nbTrameReceved, tb.finish);
+
+
+		ResponseGet res2;
+		res2 = deserializeResponseGet(tb.data);
+
+		printf("%d\n", tb.data[0]);
+		printOponentGrid(res2.grid);
+		
+	}
+	printf("a : %d\n", a.a);
+	//free(a);
+/*
 	for (int i=0; i< GRID_WIDTH; i++){
 		for (int j=0; j< GRID_HEIGHT; j++){
 			res.grid[i][j] = i*j;
 		}
 	}
-
+*/
+/*
 	for (int i=0; i< GRID_WIDTH; i++){
 		for (int j=0; j< GRID_HEIGHT; j++){
 			printf("%02d ", res.grid[i][j]);
