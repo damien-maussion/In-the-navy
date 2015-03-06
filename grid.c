@@ -286,7 +286,11 @@ void printOponentGrid(int tab[GRID_WIDTH][GRID_HEIGHT]){
 	printf("\n");
 
 	for (int i=0;i<GRID_HEIGHT;i++){
-		printf("%02d |",(i+1));
+		if(i < 9){
+			printf("%d  |",(i+1));
+		}else{
+			printf("%d |",(i+1));
+		}
 
 		for (int j =0;j<GRID_WIDTH;j++){
 			if (tab[j][i]==-1){

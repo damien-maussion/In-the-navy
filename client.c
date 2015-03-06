@@ -16,6 +16,9 @@ client <adresse-serveur> <message-a-transmettre>
 #include "grid.h"
 #include "annexe.c"
 
+#define TAILLE_MAX_NOM 256
+#define PORT_SERVER 5001
+
 typedef struct sockaddr 	sockaddr;
 typedef struct sockaddr_in 	sockaddr_in;
 typedef struct hostent 		hostent;
@@ -181,8 +184,30 @@ int main(int argc, char **argv) {
 
     tb.idTrame=-1;
     args_lance_listener args;
-    args.ad = adresse_locale;
-    args.ad.sin_port = htons(5001);
+
+	sockaddr_in adresse_locale2;
+	char machine[TAILLE_MAX_NOM+1]; 	/* nom de la machine locale */
+	hostent* ptr_hote; 	
+    
+    gethostname(machine,TAILLE_MAX_NOM);	/* recuperation du nom de la machine */
+
+	/* recuperation de la structure d'adresse en utilisant le nom */
+    if ((ptr_hote = gethostbyname(machine)) == NULL) {
+		perror("erreur : impossible de trouver le serveur a partir de son nom.");
+		exit(1);
+    }
+	
+	/* initialisation de la structure adresse_locale avec les infos recuperees */			
+    
+    /* copie de ptr_hote vers adresse_locale */
+    bcopy((char*)ptr_hote->h_addr, (char*)&adresse_locale2.sin_addr, ptr_hote->h_length);
+    adresse_locale2.sin_family		= ptr_hote->h_addrtype; 			/* ou AF_INET */
+    adresse_locale2.sin_addr.s_addr	= INADDR_ANY; 						/* ou AF_INET */
+
+    adresse_locale2.sin_port = htons(PORT_SERVER);
+
+    args.ad = adresse_locale2;
+    
     args.traitement = listen_server;
 
     if (pthread_mutex_init(&mutex_trame_buffer, NULL) != 0)
