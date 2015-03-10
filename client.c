@@ -12,6 +12,9 @@ client <adresse-serveur> <message-a-transmettre>
 #include <string.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <signal.h>
 
 #include "grid.h"
 #include "annexe.c"
@@ -23,6 +26,8 @@ typedef struct sockaddr 	sockaddr;
 typedef struct sockaddr_in 	sockaddr_in;
 typedef struct hostent 		hostent;
 typedef struct servent 		servent;
+
+sockaddr_in adresse_locale_global; /* adresse de socket local */
 
 void* interaction_client(void* ad)
 {
@@ -51,7 +56,7 @@ void* interaction_client(void* ad)
 		char pos[3];
 		char buf[4] = "1";
 
-		printf ("Enter attack position: ");
+		printf ("Choisissez des coordonnées d'attaque: ");
 		scanf ("%3s",pos);  
 		
 		strcat(buf, pos);
@@ -81,11 +86,13 @@ void* listen_server(void* args)
 {
     //cast
     args_traitement *args_t = args;
-    printf("lis beg \n");
-
-    char buffer[TAILLE_MAX_TRAME];   
+    char buffer[TAILLE_MAX_TRAME];
+    printf("%ld::",sizeof(buffer));
+    
+    printf("cvhefj\n");
+       
     if (read(args_t->soc, buffer, sizeof(buffer)) > 0){
-        //printf("reponse du serveur : \n");
+        printf("haha \n");
         Trame t = deserializeTrame(buffer);
 
         pthread_mutex_lock(&mutex_trame_buffer);
@@ -96,35 +103,77 @@ void* listen_server(void* args)
 
         //printf("TB data : \n%s\nidTtrame : %d\tnbTrameReceved: %d\tfinish : %d\n", tb.data, tb.idTrame, tb.nbTrameReceved, tb.finish);
 
-        printf("%d\n",tb.finish );
         if (tb.finish){
             if (tb.data[0]==0){
                 ResponseGet res = deserializeResponseGet(tb.data);
-                printf("Grille Get:\n");
+                //pthread_mutex_lock(&mutex_display);
+                printf("Grille :\n");
                 printOponentGrid(res.grid);
+                //pthread_mutex_unlock(&mutex_display);
             }
             else{
                 ResponseAttack res = deserializeResponseAttack(tb.data);
-                printf("Grille attack:\n");
+                //pthread_mutex_lock(&mutex_display);
+                printf("%s a attaqué.\n", inet_ntoa(res.who));
+                printf("Grille :\n");
                 printOponentGrid(res.grid);
+                //pthread_mutex_unlock(&mutex_display);
             }
         }
         //write(1,t.data,longueur);
+    }else{
+    	printf("screugneugneu");
     }
-    printf(" lis end\n");
+    printf("\n \n");
+}
+
+void byebye(void){
+
+	/*sockaddr_in *tmp = (sockaddr_in*) (ad);
+	sockaddr_in adresse_locale = (sockaddr_in) (*tmp) ;*/
+	
+	int socket_descriptor;
+	char buffer[2560];
+	/* creation de la socket */
+	if ((socket_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		perror("erreur : impossible de creer la socket de connexion avec le serveur.");
+		exit(1);
+	}
+	
+	/* tentative de connexion au serveur dont les infos sont dans adresse_locale */
+	if ((connect(socket_descriptor, (sockaddr*)(&adresse_locale_global), sizeof(adresse_locale_global))) < 0) {
+		perror("erreur : impossible de se connecter au serveur.");
+		exit(1);
+	}
+	
+	/* envoi du message vers le serveur */
+	char buf[4] = "2";
+	
+	if ((write(socket_descriptor, buf, 4)) < 0) {
+		perror("erreur suppr client : impossible d'ecrire le message destine au serveur.");
+		exit(1);
+	}else{
+		printf("\nVous êtes désormais déconnecté(e) du serveur.\n");
+	}
+}
+
+void ctrlC_Handler(int e) {
+    exit(0);
 }
 
 int main(int argc, char **argv) {
   
     int socket_descriptor; 		/* descripteur de socket */
 	int longueur; 				/* longueur d'un buffer utilisé */
-    sockaddr_in adresse_locale; /* adresse de socket local */
     hostent * ptr_host; 		/* info sur une machine hote */
     servent * ptr_service; 		/* info sur service */
     char buffer[2560];
     char * prog; 				/* nom du programme */
     char * host; 				/* nom de la machine distante */
-     
+  
+  	atexit(byebye);
+    signal(SIGINT, ctrlC_Handler);
+      
     if (argc != 2) {
 		perror("usage : client <adresse-serveur>");
 		exit(1);
@@ -141,9 +190,9 @@ int main(int argc, char **argv) {
 		exit(1);
     }
     
-    /* copie caractere par caractere des infos de ptr_host vers adresse_locale */
-    bcopy((char*)ptr_host->h_addr, (char*)&adresse_locale.sin_addr, ptr_host->h_length);
-    adresse_locale.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
+    /* copie caractere par caractere des infos de ptr_host vers adresse_locale_global */
+    bcopy((char*)ptr_host->h_addr, (char*)&adresse_locale_global.sin_addr, ptr_host->h_length);
+    adresse_locale_global.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
     
     /* 2 facons de definir le service que l'on va utiliser a distance */
     /* (commenter l'une ou l'autre des solutions) */
@@ -155,16 +204,16 @@ int main(int argc, char **argv) {
 	perror("erreur : impossible de recuperer le numero de port du service desire.");
 	exit(1);
     }
-    adresse_locale.sin_port = htons(ptr_service->s_port);
+    adresse_locale_global.sin_port = htons(ptr_service->s_port);
     */
     /*-----------------------------------------------------------*/
     
     /*-----------------------------------------------------------*/
     /* SOLUTION 2 : utiliser un nouveau numero de port */
-    adresse_locale.sin_port = htons(5000);
+    adresse_locale_global.sin_port = htons(5000);
     /*-----------------------------------------------------------*/
 
-    printf("numero de port pour la connexion au serveur : %d \n", ntohs(adresse_locale.sin_port));
+    printf("numero de port pour la connexion au serveur : %d \n", ntohs(adresse_locale_global.sin_port));
     
     /* creation de la socket */
     if ((socket_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -172,8 +221,8 @@ int main(int argc, char **argv) {
 		exit(1);
     }
     
-    /* tentative de connexion au serveur dont les infos sont dans adresse_locale */
-    if ((connect(socket_descriptor, (sockaddr*)(&adresse_locale), sizeof(adresse_locale))) < 0) {
+    /* tentative de connexion au serveur dont les infos sont dans adresse_locale_global */
+    if ((connect(socket_descriptor, (sockaddr*)(&adresse_locale_global), sizeof(adresse_locale_global))) < 0) {
 		perror("erreur : impossible de se connecter au serveur.");
 		exit(1);
     }
@@ -215,6 +264,12 @@ int main(int argc, char **argv) {
         perror("\n mutex_trame_buffer init failed\n");
         return 1;
     }
+    
+    /*if (pthread_mutex_init(&mutex_display, NULL) != 0)
+    {
+        perror("\n mutex_display init failed\n");
+        return 1;
+    }*/
 
     pthread_t thread_listen;
     if (pthread_create(&thread_listen, NULL, lance_listener, (args_lance_listener*) &args))
@@ -240,8 +295,10 @@ int main(int argc, char **argv) {
     printf("Lancement thread attack. \n");
     args.ad.sin_port = htons(5000);
     
+    sleep(1);
+    
     pthread_t nouv_client;
-    if (pthread_create(&nouv_client, NULL, interaction_client, (sockaddr_in*) &adresse_locale))
+    if (pthread_create(&nouv_client, NULL, interaction_client, (sockaddr_in*) &adresse_locale_global))
     {
         perror("Impossible creer thread");
         return -1;
@@ -252,6 +309,7 @@ int main(int argc, char **argv) {
         return -1;
     }
     pthread_mutex_destroy(&mutex_trame_buffer);
+    //pthread_mutex_destroy(&mutex_display);
     
     exit(0);
     
