@@ -25,7 +25,7 @@ typedef struct args_traitement args_traitement;
 pthread_mutex_t mutex_display;
 
 void* lance_listener(void* void_args ){
-
+	printf("cc");
 	//cast 
     args_lance_listener *args = void_args;
 
@@ -48,7 +48,7 @@ void* lance_listener(void* void_args ){
     
     /* initialisation de la file d'ecoute */
     listen(socket_descriptor,5);
-
+	printf("cc2");
     /* attente des connexions et traitement des donnees recues */
     for(;;) {
     

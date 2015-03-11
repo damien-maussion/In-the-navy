@@ -274,7 +274,7 @@ void* prise_en_charge_client(void* args)
 
 void byebye(void){
 	
-	char *str = "\nLe serveur est désormais hors-ligne.\n";
+	char *str = "-Le serveur est désormais hors-ligne.\n\0";
 	BroadCast(str, strlen(str));
 	Liste_clients *it = clients;
     while(it->next){

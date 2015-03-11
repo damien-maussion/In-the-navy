@@ -110,14 +110,17 @@ void* listen_server(void* args)
                 printf("Grille :\n");
                 printOponentGrid(res.grid);
                 //pthread_mutex_unlock(&mutex_display);
-            }
-            else{
+            }else if(tb.data[0]==1){
                 ResponseAttack res = deserializeResponseAttack(tb.data);
                 //pthread_mutex_lock(&mutex_display);
                 printf("%s a attaqué.\n", inet_ntoa(res.who));
                 printf("Grille :\n");
                 printOponentGrid(res.grid);
                 //pthread_mutex_unlock(&mutex_display);
+            }else if(tb.data[0] == '-'){
+            	printf("%s",tb.data);
+            }else{
+            	perror("erreur : données incomprises");
             }
         }
         //write(1,t.data,longueur);
