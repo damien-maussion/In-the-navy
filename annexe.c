@@ -76,7 +76,7 @@ void* lance_listener(void* void_args ){
         args->traitement((args_traitement*)&args_t);
         
         //pthread_mutex_lock(&mutex_display);
-        printf("creation thread.\n");
+        //printf("creation thread.\n");
         //pthread_mutex_unlock(&mutex_display);
         
         /*
@@ -85,7 +85,14 @@ void* lance_listener(void* void_args ){
         {
             perror("Impossible creer thread");
             exit(1);
-        }*/
+        }
+        */
+        /*
+        if (pthread_join(nouv_client, NULL)){
+            perror("Impossible joindre thread");
+            exit(1);
+        }
+        */
     }
 
     close(socket_descriptor);

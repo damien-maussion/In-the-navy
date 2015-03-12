@@ -88,17 +88,12 @@ void* listen_server(void* args)
     //cast
     args_traitement *args_t = args;
     char buffer[TAILLE_MAX_TRAME];
-    printf("%ld::",sizeof(buffer));
-    
-    printf("cvhefj\n");
        
     if (read(args_t->soc, buffer, sizeof(buffer)) >= 0){
-        printf("haha \n");
+
         Trame t = deserializeTrame(buffer);
 
-        pthread_mutex_lock(&mutex_trame_buffer);
         receveTrame(&tb, t);
-        pthread_mutex_unlock(&mutex_trame_buffer);
         
         //printf("Trame data : \n%s\nidTtrame : %d\tindex: %d\ttaille : %d\n", t.data, t.idTrame, t.index, t.taille);
 
@@ -122,27 +117,29 @@ void* listen_server(void* args)
                 printf("Grille :\n");
                 printOponentGrid(res.grid);
                 
-                interaction_client();
-                //printf("\n\nChoisissez des coordonnées d'attaque: ");
+                if (res.result !=WIN)
+                    interaction_client();
+                else
+                    printf("Grille terminée.\n\n");
                 //pthread_mutex_unlock(&mutex_display);
             }else if(tb.data[0] == '-'){
-            	printf("%s",tb.data);
+                printf("%s",tb.data);
             }else{
-            	perror("erreur : données incomprises");
+                perror("erreur : données incomprises");
             }
         }
         //write(1,t.data,longueur);
     }else{
-    	printf("screugneugneu\n");
+        perror("invalid read\n");
     }
 }
 
 void byebye(void){
 
-	/*sockaddr_in *tmp = (sockaddr_in*) (ad);
-	sockaddr_in adresse_locale = (sockaddr_in) (*tmp) ;*/
-	
-	int socket_descriptor;
+    /*sockaddr_in *tmp = (sockaddr_in*) (ad);
+    sockaddr_in adresse_locale = (sockaddr_in) (*tmp) ;*/
+    
+    int socket_descriptor;
 	char buffer[2560];
 	/* creation de la socket */
 	if ((socket_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -165,6 +162,7 @@ void byebye(void){
 	}else{
 		printf("\nVous êtes désormais déconnecté(e) du serveur.\n");
 	}
+    
 }
 
 void ctrlC_Handler(int e) {
@@ -276,11 +274,11 @@ int main(int argc, char **argv) {
         return 1;
     }
     
-    /*if (pthread_mutex_init(&mutex_display, NULL) != 0)
+    if (pthread_mutex_init(&mutex_display, NULL) != 0)
     {
         perror("\n mutex_display init failed\n");
         return 1;
-    }*/
+    }
 
     pthread_t thread_listen;
     if (pthread_create(&thread_listen, NULL, lance_listener, (args_lance_listener*) &args))

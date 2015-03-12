@@ -220,6 +220,7 @@ void* prise_en_charge_client(void* args)
         sendResponse(str_grid,(int) strlen(str_grid));
         //delete str_grid;
         */
+        printf("attack\n");
 
         ResponseAttack res;
         pthread_mutex_lock(&mutex_grid);
@@ -229,9 +230,20 @@ void* prise_en_charge_client(void* args)
         printGrid(g);
         pthread_mutex_unlock(&mutex_grid);
                 
-        printf("attack\n");
 
         sendResponse(serializeResponseAttack(res), TAILLE_RESPONSE);
+
+        if (res.result == WIN){
+            pthread_mutex_lock(&mutex_grid);
+            init(&g);
+            ResponseGet res;
+            getOponentGrid(g, res.grid);
+            printf("\nGrille finie => Creation et envoie d'une nouvelle grille.\n");
+            printGrid(g);
+            pthread_mutex_unlock(&mutex_grid);
+            sendResponse(serializeResponseGet(res),TAILLE_RESPONSE);
+        }
+
     }else if(c=='2'){     
            
         /*
@@ -351,7 +363,7 @@ int main(int argc, char **argv) {
 
     //creation grille
 
-    // seed ...
+    srand(time(NULL));
     init(&g);
     printGrid(g);
 
