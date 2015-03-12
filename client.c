@@ -20,7 +20,8 @@ client <adresse-serveur> <message-a-transmettre>
 #include "annexe.c"
 
 #define TAILLE_MAX_NOM 256
-#define PORT_SERVER 5001
+#define PORT_CLIENT 5001
+#define PORT_SERVER 5000
 
 typedef struct sockaddr 	sockaddr;
 typedef struct sockaddr_in 	sockaddr_in;
@@ -29,17 +30,17 @@ typedef struct servent 		servent;
 
 sockaddr_in adresse_locale_global; /* adresse de socket local */
 
-void* interaction_client(void* ad)
+void* interaction_client()
 {
 	//cast adresse_locale
-	sockaddr_in *tmp = (sockaddr_in*) (ad);
-	sockaddr_in adresse_locale = (sockaddr_in) (*tmp) ;
+	//sockaddr_in *tmp = (sockaddr_in*) (ad);
+	//sockaddr_in adresse_locale = (sockaddr_in) (*tmp) ;
 
 	bool play = true;
 	int socket_descriptor;
 	char buffer[2560];
 	
-	while (play){
+	//while (play){
 		/* creation de la socket */
 		if ((socket_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 			perror("erreur : impossible de creer la socket de connexion avec le serveur.");
@@ -47,7 +48,7 @@ void* interaction_client(void* ad)
 		}
 		
 		/* tentative de connexion au serveur dont les infos sont dans adresse_locale */
-		if ((connect(socket_descriptor, (sockaddr*)(&adresse_locale), sizeof(adresse_locale))) < 0) {
+		if ((connect(socket_descriptor, (sockaddr*)(&adresse_locale_global), sizeof(adresse_locale_global))) < 0) {
 			perror("erreur : impossible de se connecter au serveur.");
 			exit(1);
 		}
@@ -75,7 +76,7 @@ void* interaction_client(void* ad)
             printf("%s", t.data);
         }
         */
-	}
+	//}
 }
 
 
@@ -111,6 +112,8 @@ void* listen_server(void* args)
                 printOponentGrid(res.grid);
                 //pthread_mutex_unlock(&mutex_display);
                 
+                interaction_client();
+                
                 //printf("\n\nChoisissez des coordonnées d'attaque: ");
             }else if(tb.data[0]==1){
                 ResponseAttack res = deserializeResponseAttack(tb.data);
@@ -119,6 +122,7 @@ void* listen_server(void* args)
                 printf("Grille :\n");
                 printOponentGrid(res.grid);
                 
+                interaction_client();
                 //printf("\n\nChoisissez des coordonnées d'attaque: ");
                 //pthread_mutex_unlock(&mutex_display);
             }else if(tb.data[0] == '-'){
@@ -216,7 +220,7 @@ int main(int argc, char **argv) {
     
     /*-----------------------------------------------------------*/
     /* SOLUTION 2 : utiliser un nouveau numero de port */
-    adresse_locale_global.sin_port = htons(5000);
+    adresse_locale_global.sin_port = htons(PORT_SERVER);
     /*-----------------------------------------------------------*/
 
     printf("numero de port pour la connexion au serveur : %d \n", ntohs(adresse_locale_global.sin_port));
@@ -260,7 +264,7 @@ int main(int argc, char **argv) {
     adresse_locale2.sin_family		= ptr_hote->h_addrtype; 			/* ou AF_INET */
     adresse_locale2.sin_addr.s_addr	= INADDR_ANY; 						/* ou AF_INET */
 
-    adresse_locale2.sin_port = htons(PORT_SERVER);
+    adresse_locale2.sin_port = htons(PORT_CLIENT);
 
     args.ad = adresse_locale2;
     
@@ -293,12 +297,18 @@ int main(int argc, char **argv) {
 		perror("erreur : impossible d'ecrire le message destine au serveur.");
         exit(1);
     }
-    
+
     //close(socket_descriptor);
     printf("message get envoye au serveur. \n");
+
+    if (pthread_join(thread_listen, NULL)){
+        perror("Impossible joindre thread");
+        return -1;
+    }
     
     //get_grille_courante(socket_descriptor, buffer, sizeof(buffer));
     
+    /*
     printf("Lancement thread attack. \n");
     args.ad.sin_port = htons(5000);
     
@@ -318,7 +328,7 @@ int main(int argc, char **argv) {
     pthread_mutex_destroy(&mutex_trame_buffer);
     close(socket_descriptor);
     //pthread_mutex_destroy(&mutex_display);
-    
+    */
     exit(0);
     
 }

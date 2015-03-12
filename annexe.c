@@ -73,18 +73,19 @@ void* lance_listener(void* void_args ){
         args_t.soc = nouv_socket_descriptor;
         args_t.ad = adresse_client_courant;
 
-        //args->traitement((args_traitement*)&args_t);
+        args->traitement((args_traitement*)&args_t);
         
         //pthread_mutex_lock(&mutex_display);
         printf("creation thread.\n");
         //pthread_mutex_unlock(&mutex_display);
         
+        /*
         pthread_t nouv_client;
         if (pthread_create(&nouv_client, NULL, args->traitement, (args_traitement*)&args_t))
         {
             perror("Impossible creer thread");
             exit(1);
-        }
+        }*/
     }
 
     close(socket_descriptor);
