@@ -66,7 +66,7 @@ void* lance_listener(void* void_args ){
         
         /* traitement du message */
         //pthread_mutex_lock(&mutex_display);
-        printf("reception d'un message.\n");
+        printf("\nreception d'un message.\n");
         //pthread_mutex_unlock(&mutex_display);
         
         args_traitement args_t;
@@ -86,4 +86,6 @@ void* lance_listener(void* void_args ){
             exit(1);
         }
     }
+
+    close(socket_descriptor);
 }

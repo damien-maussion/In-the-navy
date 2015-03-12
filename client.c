@@ -91,7 +91,7 @@ void* listen_server(void* args)
     
     printf("cvhefj\n");
        
-    if (read(args_t->soc, buffer, sizeof(buffer)) > 0){
+    if (read(args_t->soc, buffer, sizeof(buffer)) >= 0){
         printf("haha \n");
         Trame t = deserializeTrame(buffer);
 
@@ -110,12 +110,16 @@ void* listen_server(void* args)
                 printf("Grille :\n");
                 printOponentGrid(res.grid);
                 //pthread_mutex_unlock(&mutex_display);
+                
+                //printf("\n\nChoisissez des coordonnées d'attaque: ");
             }else if(tb.data[0]==1){
                 ResponseAttack res = deserializeResponseAttack(tb.data);
                 //pthread_mutex_lock(&mutex_display);
                 printf("%s a attaqué.\n", inet_ntoa(res.who));
                 printf("Grille :\n");
                 printOponentGrid(res.grid);
+                
+                //printf("\n\nChoisissez des coordonnées d'attaque: ");
                 //pthread_mutex_unlock(&mutex_display);
             }else if(tb.data[0] == '-'){
             	printf("%s",tb.data);
@@ -125,9 +129,8 @@ void* listen_server(void* args)
         }
         //write(1,t.data,longueur);
     }else{
-    	printf("screugneugneu");
+    	printf("screugneugneu\n");
     }
-    printf("\n \n");
 }
 
 void byebye(void){
@@ -235,6 +238,7 @@ int main(int argc, char **argv) {
     printf("Lancement thread d'écoute sur le port 5001. \n");
 
     tb.idTrame=-1;
+    tb.finish=false;
     args_lance_listener args;
 
 	sockaddr_in adresse_locale2;
@@ -312,6 +316,7 @@ int main(int argc, char **argv) {
         return -1;
     }
     pthread_mutex_destroy(&mutex_trame_buffer);
+    close(socket_descriptor);
     //pthread_mutex_destroy(&mutex_display);
     
     exit(0);

@@ -233,13 +233,8 @@ void* prise_en_charge_client(void* args)
 
         sendResponse(serializeResponseAttack(res), TAILLE_RESPONSE);
     }else if(c=='2'){     
-    
-        /*Liste_clients *tmp1 = clients;
-        while(tmp1){
-        	printf("DELETE %s\n", inet_ntoa(tmp1->ad.sin_addr));
-        	tmp1 = tmp1->next;
-        }*/
            
+        /*
         Liste_clients *nouv_client = clients;
         
         if(sockaddr_equal(nouv_client->ad, args_t->ad)){
@@ -260,12 +255,36 @@ void* prise_en_charge_client(void* args)
 		    	perror("erreur : ce client n'existe pas.");
 		    }
 		}
+        */
+
+        if (clients){
+            if (sockaddr_equal(clients->ad, args_t->ad)){
+                Liste_clients *tmp = clients;
+                clients = clients->next;
+                free(tmp);
+            }
+            else {
+
+                Liste_clients *it = clients;
         
-        /*Liste_clients *tmp = clients;
-        while(tmp){
-        	printf("DELETE %s\n", inet_ntoa(tmp->ad.sin_addr));
-        	tmp = tmp->next;
-        }*/
+                while(it->next && !sockaddr_equal(it->next->ad, args_t->ad)){   //if next is the address searched
+                    it = it->next;
+                }
+
+                if (it->next){
+                    Liste_clients *tmp = it->next;
+                    it->next = it->next->next;
+                    free(it);
+                }
+                else{
+                    perror("erreur : ce client n'existe pas.");
+                }
+            }
+        }
+        else {
+            //perror("erreur : aucun client.");
+        }
+
     }
 
     return NULL;
@@ -277,7 +296,7 @@ void byebye(void){
 	char *str = "-Le serveur est désormais hors-ligne.\n\0";
 	BroadCast(str, strlen(str));
 	Liste_clients *it = clients;
-    while(it->next){
+    while(it){
     	Liste_clients *tmp = it;
     	it = it->next;
     	free(tmp);
