@@ -7,6 +7,7 @@ client <adresse-serveur> <message-a-transmettre>
 #include <unistd.h>
 #include <linux/types.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <netdb.h>
 #include <strings.h>
 #include <string.h>
@@ -31,6 +32,8 @@ sockaddr_in adresse_locale_globale; /* adresse de socket local */
 
 Grid grid;
 
+void* prise_en_charge(int soc);
+
 void lanceAttack(int soc){
 	char pos[3];
 	char buf[4] = "1";
@@ -41,53 +44,76 @@ void lanceAttack(int soc){
 	strcat(buf, pos);
 	
 	if ((write(soc, buf, 4)) < 0) {
-		perror("erreur : impossible d'ecrire le message destine au serveur.");
+		perror("erreur : impossible d'ecrire le message destine à l'autre joueur.");
 		exit(1);
 	}
 	
-	
+	prise_en_charge(soc);
 	
 }
 
-void* prise_en_charge(void *args)
+void* prise_en_charge(int soc)
 {
-   //cast
-    args_traitement *args_t = args;
-    
+    printf("heo\n");
     char buffer[256];
-    int longueur;
-   
-    if ((longueur = read(args_t->soc, buffer, sizeof(buffer))) <= 0) 
-        return NULL;
-    
-    char c= buffer[0];
-    if (c=='0'){		
-    	printf("%s",buffer);
-    	printf("pwet\n");
-    }
-    else if (c=='1'){ 			//attack 
-    	printf("attaque recue\n");
-    	PositionLetterDigit p;
-        p.letter = buffer[1];
-        char subbuff[3];
-        memcpy( subbuff, &buffer[2], 2 );
-        subbuff[2] = '\0';
-        p.y = atoi(subbuff);
-        
-        char res[10];
-        res[0] = '0';
-        resultAttack resA= attack(&grid, p);
-        memcpy(res+1, &resA, sizeof(resultAttack));
-        memcpy(res+sizeof(resultAttack), buffer+1, 3);
-        
-        
+    /*
+   	fd_set readfs;
+
+   	bool b=true;
+	while(b){
+	   int ret = 0;
+	   FD_ZERO(&readfs);
+	   FD_SET(soc, &readfs);
+	   
+	   if((ret = select(soc + 1, &readfs, NULL, NULL, NULL)) < 0)
+	   {
+	      perror("select()");
+	      exit(1);
+	   }
+	    printf("haha\n");
+
+	  	 
+	   if(ret == 0)
+	   {
+	      //ici le code si la temporisation (dernier argument) est écoulée (il faut bien évidemment avoir mis quelque chose en dernier argument).
+	   }	
+	   
+	   if(FD_ISSET(soc, &readfs))
+	   {
+	   		b=false;
+	    	printf("hoho\n");*/
+	      	int longueur = read(soc, buffer, sizeof(buffer));
+		    printf("hoa\n");
+		   
+		    if (longueur <= 0){
+		    	printf("hoe\n");
+		        return NULL;
+		    }
+
+			printf("attaque recue\n");/*
+			PositionLetterDigit p;
+		    p.letter = buffer[1];
+		    char subbuff[3];
+		    memcpy( subbuff, &buffer[2], 2 );
+		    subbuff[2] = '\0';
+		    p.y = atoi(subbuff);
+		    
+		    char res[10];
+		    res[0] = '0';
+		    resultAttack resA= attack(&grid, p);
+		    memcpy(res+1, &resA, sizeof(resultAttack));
+		    memcpy(res+sizeof(resultAttack), buffer+1, 3);
+			
+		    write(soc, res, 10);
+		    
+		    lanceAttack(soc); 
+		    
+	   }
+
 		
-        write(args_t->soc, res, 10);
-        
-        lanceAttack(args_t->soc); 
-                
-        printf("attack\n");
-    }
+	}*/
+    
+    
 }
 
 void byebye(void){
@@ -205,41 +231,70 @@ int main(int argc, char **argv) {
 		perror("erreur : impossible de lire le message du serveur.");
         exit(1);
     }
-    
-    args_lance_listener args;
-    	
-	char machine[TAILLE_MAX_NOM+1]; 	/* nom de la machine locale */
-	hostent* ptr_hote; 	
-	
-	gethostname(machine,TAILLE_MAX_NOM);	/* recuperation du nom de la machine */
 
-	/* recuperation de la structure d'adresse en utilisant le nom */
-	if ((ptr_hote = gethostbyname(machine)) == NULL) {
-		perror("erreur : impossible de trouver le serveur a partir de son nom.");
-		exit(1);
-	}
-	
-	bcopy((char*)ptr_hote->h_addr, (char*)&args.ad.sin_addr, ptr_hote->h_length);
-	args.ad.sin_family		= ptr_hote->h_addrtype; 			/* ou AF_INET */
-	args.ad.sin_addr.s_addr	= INADDR_ANY; 						/* ou AF_INET */
-
-	args.ad.sin_port = htons(PORT_CLIENT);
-	printf("numero de port : %d \n", 
-	   ntohs(args.ad.sin_port) /*ntohs(ptr_service->s_port)*/);
-	  printf("%s\n", inet_ntoa(args.ad.sin_addr));
-	  
-	args.traitement = prise_en_charge;
-	printf("Lancement de l'écoute\n");
-	
-	lance_listener((args_lance_listener*) &args);
+    int soc;
     
     if (strcmp(oponent, "game")==0){
-    	printf("1er client attente");
+    	printf("1er client attente\n");
+
+    	sockaddr_in ad;
     	
+		char machine[TAILLE_MAX_NOM+1]; 		/* nom de la machine locale */
+		hostent* ptr_hote; 	
+		
+		gethostname(machine,TAILLE_MAX_NOM);	/* recuperation du nom de la machine */
+
+		/* recuperation de la structure d'adresse en utilisant le nom */
+		if ((ptr_hote = gethostbyname(machine)) == NULL) {
+			perror("erreur : impossible de trouver le serveur a partir de son nom.");
+			exit(1);
+		}
+		
+		bcopy((char*)ptr_hote->h_addr, (char*)&ad, ptr_hote->h_length);
+		ad.sin_family		= ptr_hote->h_addrtype; 			/* ou AF_INET */
+		ad.sin_addr.s_addr	= INADDR_ANY; 						/* ou AF_INET */
+
+		ad.sin_port = htons(PORT_CLIENT);
+
+    	/* creation de la socket */
+	    if ((soc = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+	        perror("erreur : impossible de creer la socket de connexion avec le client.");
+	        exit(1);
+	    }
+
+	    /* association du socket soc à la structure d'adresse adresse_locale */
+	    if ((bind(soc, (sockaddr*)(&(ad)), sizeof(ad))) < 0) {
+	        perror("erreur : impossible de lier la socket a l'adresse de connexion.");
+	        exit(1);
+	    }
+	    
+	    /* initialisation de la file d'ecoute */
+	    listen(soc,1);
+
+		sockaddr_in adresse_client_courant;
+	    
+	    int longueur_adresse_courante = sizeof(adresse_client_courant);
+	    int nouv_soc;
+
+		printf("Attente de joueur...\n");
+        /* adresse_client_courant sera renseigné par accept via les infos du connect */
+        for (;;){
+	        if ((nouv_soc = 
+	            accept(soc, 
+	                   (sockaddr*)(&adresse_client_courant),
+	                   &longueur_adresse_courante))
+	             < 0) {
+	            perror("erreur : impossible d'accepter la connexion avec le client.");
+	            exit(1);
+	        }
+        	prise_en_charge(soc);
+        }
+
 		
     }else{
     	printf("2eme client joue contre %s\n", oponent);
-    	int socket_descriptor2;
+    	sockaddr_in ad;
+    	hostent * ptr_host; 		/* info sur une machine hote */
     	
     	if ((ptr_host = gethostbyname(oponent)) == NULL) {
 			perror("erreur : impossible de trouver le serveur a partir de son adresse.");
@@ -247,48 +302,30 @@ int main(int argc, char **argv) {
 		}
 		
 		/* copie caractere par caractere des infos de ptr_host vers adresse_locale_globale */
-		bcopy((char*)ptr_host->h_addr, (char*)&adresse_locale_globale.sin_addr, ptr_host->h_length);
-		adresse_locale_globale.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
+		bcopy((char*)ptr_host->h_addr, (char*)&ad.sin_addr, ptr_host->h_length);
+		ad.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
 		
-		adresse_locale_globale.sin_port = htons(PORT_CLIENT);
+		ad.sin_port = htons(PORT_CLIENT);
 
-		printf("numero de port pour la connexion au serveur : %d \n", ntohs(adresse_locale_globale.sin_port));
+		printf("numero de port pour la connexion à l'autre joueur : %d \n", ntohs(ad.sin_port));
 		
-		/* creation de la socket */
-		if ((socket_descriptor2 = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		if ((soc = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 			perror("erreur : impossible de creer la socket de connexion avec le serveur.");
 			exit(1);
 		}
 		
-		/* tentative de connexion au serveur dont les infos sont dans adresse_locale_globale */
-		if ((connect(socket_descriptor2, (sockaddr*)(&adresse_locale_globale), sizeof(adresse_locale_globale))) < 0) {
+		if ((connect(soc, (sockaddr*)(&ad), sizeof(ad))) < 0) {
 			perror("erreur : impossible de se connecter au serveur.");
 			exit(1);
 		}
-    	
-    	/*
-    	sockaddr_in ad;
-    	inet_aton(oponent, &ad.sin_addr);
-    	ad.sin_port = htons(PORT_CLIENT);
-    	printf("%s\n", inet_ntoa(ad.sin_addr));
-
-	
-		if ((socket_descriptor2 = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-			perror("erreur : impossible de creer la socket de connexion avec le serveur.");
-			exit(1);
-		}
-
-
-		if ((connect(socket_descriptor2, (sockaddr*)(&(ad)), sizeof(ad))) < 0) {
-			perror("erreur : impossible de se connecter au serveur.");
-			exit(1);
-		}
-		*/
 		
-		lanceAttack(socket_descriptor2);
+		if (write(soc, "buff", 4)<0)
+			printf("merde\n");
+		//lanceAttack(soc);
 		
    	}
-    
+    close(soc);
+    close(socket_descriptor);
     
     exit(0);
     
