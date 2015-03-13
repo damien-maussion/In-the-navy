@@ -113,13 +113,7 @@ int main(int argc, char **argv) {
     adresse_locale.sin_port = htons(PORT_SERVER);
     /*-----------------------------------------------------------*/
     
-    printf("numero de port pour la connexion au serveur : %d \n", 
-		   ntohs(adresse_locale.sin_port) /*ntohs(ptr_service->s_port)*/);
-		   
-		   
-		printf("numero de port : %d \n", 
-		   ntohs(adresse_locale.sin_port) /*ntohs(ptr_service->s_port)*/);
-		  printf("%s\n", inet_ntoa(adresse_locale.sin_addr));
+    printf("numero de port pour la connexion au serveur : %d \n", ntohs(adresse_locale.sin_port) /*ntohs(ptr_service->s_port)*/);
         
     printf("Lancement de l'écoute\n");
 

@@ -34,6 +34,7 @@ sockaddr_in adresse_locale_globale; /* adresse de socket local */
 
 Grid grid;
 int opGrid[GRID_WIDTH][GRID_HEIGHT];
+int adversaire;
 
 void reinitOponentGrid(){
 	for (int i=0; i<GRID_WIDTH;i++){
@@ -83,7 +84,6 @@ void* prise_en_charge(int soc)
     }
 
     if (buffer[0]== '0'){
-    	printf("resultAttack recu\n");
 
     	resultAttack resA;
     	memcpy(&resA, buffer+sizeof(char), sizeof(resultAttack));
@@ -97,7 +97,7 @@ void* prise_en_charge(int soc)
 	subbuff[2] = '\0';
 	p.y = atoi(subbuff);
 
-    	printf("attack en %c%d resultat %s\n", p.letter, p.y, toString(resA));
+    	printf("Attaque en %c%d, resultat %s\n", p.letter, p.y, toString(resA));
 
     	if (resA != REPEAT && resA!= ERROR){
 		
@@ -121,7 +121,6 @@ void* prise_en_charge(int soc)
     	
     }
     else if (buffer[0] =='1'){
-	printf("attaque recue\n");
 
 	PositionLetterDigit p;
 	p.letter = buffer[1];
@@ -132,7 +131,7 @@ void* prise_en_charge(int soc)
 
 	resultAttack resA= attack(&grid, p);
 
-    	printf("attaqué en %c%d resultat %s\n", p.letter, p.y, toString(resA));
+    	printf("Attaqué en %c%d, resultat %s\n", p.letter, p.y, toString(resA));
 
 	char res[10];
 
@@ -162,32 +161,11 @@ void* prise_en_charge(int soc)
 }
 
 void byebye(void){
-
-	/*sockaddr_in *tmp = (sockaddr_in*) (ad);
-	sockaddr_in adresse_locale = (sockaddr_in) (*tmp) ;*/
-	
-	int socket_descriptor;
-	char buffer[2560];
-	/* creation de la socket */
-	if ((socket_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		perror("erreur : impossible de creer la socket de connexion avec le serveur.");
-		exit(1);
-	}
-	
-	/* tentative de connexion au serveur dont les infos sont dans adresse_locale */
-	if ((connect(socket_descriptor, (sockaddr*)(&adresse_locale_globale), sizeof(adresse_locale_globale))) < 0) {
-		perror("erreur : impossible de se connecter au serveur.");
-		exit(1);
-	}
-	
-	/* envoi du message vers le serveur */
-	char buf[4] = "2";
-	
-	if ((write(socket_descriptor, buf, 4)) < 0) {
-		perror("erreur suppr client : impossible d'ecrire le message destine au serveur.");
-		exit(1);
-	}else{
-		printf("\nVous êtes désormais déconnecté(e) du serveur.\n");
+	printf("\nVous êtes désormais déconnecté(e).\n");
+	if(send(adversaire, "-Votre adversaire a quitté la partie.\n", 50, 0) < 0)
+	{
+		perror("send()");
+		exit(-1);
 	}
 }
 
@@ -282,7 +260,6 @@ int main(int argc, char **argv) {
     int soc;
     
     if (strcmp(oponent, "game")==0){
-    	printf("1er client attente\n");
 
     	sockaddr_in ad;
     	
@@ -344,12 +321,12 @@ int main(int argc, char **argv) {
     		printOponentGrid(opGrid);
 
 		printf("Attente de l'attaque de l'adversaire...\n");
-
+			adversaire = nouv_soc;
         	prise_en_charge(nouv_soc);
         //}
 
     }else{
-    	printf("2eme client joue contre %s\n", oponent);
+    	printf("Vous jouez contre %s\n", oponent);
     	sockaddr_in ad;
     	hostent * ptr_host; 		/* info sur une machine hote */
     	
@@ -375,7 +352,7 @@ int main(int argc, char **argv) {
 			perror("erreur : impossible de se connecter au serveur.");
 			exit(1);
 		}
-
+		adversaire = soc;
 		printf("Votre grille :\n");
     		printGrid(grid);
 		printf("Grille de l'adversaire :\n");
