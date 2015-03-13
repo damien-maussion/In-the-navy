@@ -17,6 +17,8 @@ client <adresse-serveur> <message-a-transmettre>
 #include <arpa/inet.h>
 #include <signal.h>
 
+#include <errno.h>
+
 #include "../grid.h"
 #include "../annexe.c"
 
@@ -31,6 +33,15 @@ typedef struct servent 		servent;
 sockaddr_in adresse_locale_globale; /* adresse de socket local */
 
 Grid grid;
+int opGrid[GRID_WIDTH][GRID_HEIGHT];
+
+void reinitOponentGrid(){
+	for (int i=0; i<GRID_WIDTH;i++){
+		for (int j=0; j<GRID_HEIGHT;j++){
+			opGrid[i][j]=0;
+		}
+	}
+}
 
 void* prise_en_charge(int soc);
 
@@ -52,67 +63,87 @@ void lanceAttack(int soc){
 	
 }
 
+void updateOpGrid(PositionLetterDigit p, resultAttack res){
+	Position pos= toPosition(p);
+
+	if (res == WATER)
+		opGrid[pos.x][pos.y]=-1;
+	else if (res==TOUCH || res == SUNK || res == WIN)
+		opGrid[pos.x][pos.y]=-2;
+
+}
+
 void* prise_en_charge(int soc)
 {
-    printf("heo\n");
-    char buffer[256];
-    /*
-   	fd_set readfs;
+    char buffer[10];
+    
+   	int l = read(soc, buffer, sizeof(buffer));
+    if ( l < 0){
+        return NULL;
+    }
 
-   	bool b=true;
-	while(b){
-	   int ret = 0;
-	   FD_ZERO(&readfs);
-	   FD_SET(soc, &readfs);
-	   
-	   if((ret = select(soc + 1, &readfs, NULL, NULL, NULL)) < 0)
-	   {
-	      perror("select()");
-	      exit(1);
-	   }
-	    printf("haha\n");
+    if (buffer[0]== '0'){
+    	printf("resultAttack recu\n");
 
-	  	 
-	   if(ret == 0)
-	   {
-	      //ici le code si la temporisation (dernier argument) est écoulée (il faut bien évidemment avoir mis quelque chose en dernier argument).
-	   }	
-	   
-	   if(FD_ISSET(soc, &readfs))
-	   {
-	   		b=false;
-	    	printf("hoho\n");*/
-	      	int longueur = read(soc, buffer, sizeof(buffer));
-		    printf("hoa\n");
-		   
-		    if (longueur <= 0){
-		    	printf("hoe\n");
-		        return NULL;
-		    }
+    	resultAttack resA;
+    	memcpy(&resA, buffer+sizeof(char), sizeof(resultAttack));
+    	
+    	PositionLetterDigit p;
 
-			printf("attaque recue\n");/*
-			PositionLetterDigit p;
-		    p.letter = buffer[1];
-		    char subbuff[3];
-		    memcpy( subbuff, &buffer[2], 2 );
-		    subbuff[2] = '\0';
-		    p.y = atoi(subbuff);
-		    
-		    char res[10];
-		    res[0] = '0';
-		    resultAttack resA= attack(&grid, p);
-		    memcpy(res+1, &resA, sizeof(resultAttack));
-		    memcpy(res+sizeof(resultAttack), buffer+1, 3);
+	    memcpy( &p.letter, buffer+sizeof(resultAttack), sizeof(char) );
+
+	    char subbuff[3];
+	    memcpy( subbuff, buffer+sizeof(resultAttack)+sizeof(char), 2 );
+	    subbuff[2] = '\0';
+	    p.y = atoi(subbuff);
+
+    	printf("attack en %c%d resultat %s\n", p.letter, p.y, toString(resA));
+
+    	if (resA != REPEAT && resA!= ERROR){
+    		updateOpGrid(p, resA);
+
+    		printf("Grille de l'adversaire :\n");
+    		printOponentGrid(opGrid);
+
+    	}
+
+    	prise_en_charge(soc);
+    }
+    else if (buffer[0] =='1'){
+		printf("attaque recue\n");
+		
+		PositionLetterDigit p;
+	    p.letter = buffer[1];
+	    char subbuff[3];
+	    memcpy( subbuff, &buffer[2], 2 );
+	    subbuff[2] = '\0';
+	    p.y = atoi(subbuff);
+	  
+	    resultAttack resA= attack(&grid, p);
+
+    	printf("attaqué en %c%d resultat %s\n", p.letter, p.y, toString(resA));
+
+    	printf("Votre grille :\n");
+    	printGrid(grid);
+
+
+    	if (resA != REPEAT && resA!= ERROR){
+
+    		char res[10];
+	    	res[0] = '0';
+
+		    memcpy(res+sizeof(char), &resA, sizeof(resultAttack));
+		    memcpy(res+sizeof(resultAttack), buffer+sizeof(char), 3*sizeof(char));
 			
 		    write(soc, res, 10);
 		    
 		    lanceAttack(soc); 
-		    
-	   }
+		}
+		else{
+			prise_en_charge(soc);
+		}
 
-		
-	}*/
-    
+    }
     
 }
 
@@ -216,7 +247,9 @@ int main(int argc, char **argv) {
 		exit(1);
     }
     
+    srand(time(NULL));
     init(&grid);
+    reinitOponentGrid();
     
     printf("envoi d'un message getoponent au serveur. \n");
       
@@ -262,6 +295,9 @@ int main(int argc, char **argv) {
 	        exit(1);
 	    }
 
+	    int reuse = 1;
+		setsockopt(soc, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+
 	    /* association du socket soc à la structure d'adresse adresse_locale */
 	    if ((bind(soc, (sockaddr*)(&(ad)), sizeof(ad))) < 0) {
 	        perror("erreur : impossible de lier la socket a l'adresse de connexion.");
@@ -278,7 +314,7 @@ int main(int argc, char **argv) {
 
 		printf("Attente de joueur...\n");
         /* adresse_client_courant sera renseigné par accept via les infos du connect */
-        for (;;){
+        //for (;;){
 	        if ((nouv_soc = 
 	            accept(soc, 
 	                   (sockaddr*)(&adresse_client_courant),
@@ -287,10 +323,15 @@ int main(int argc, char **argv) {
 	            perror("erreur : impossible d'accepter la connexion avec le client.");
 	            exit(1);
 	        }
-        	prise_en_charge(soc);
-        }
 
-		
+	        printf("Votre grille :\n");
+    		printGrid(grid);
+    		printf("Grille de l'adversaire :\n");
+    		printOponentGrid(opGrid);
+
+        	prise_en_charge(nouv_soc);
+        //}
+
     }else{
     	printf("2eme client joue contre %s\n", oponent);
     	sockaddr_in ad;
@@ -318,10 +359,13 @@ int main(int argc, char **argv) {
 			perror("erreur : impossible de se connecter au serveur.");
 			exit(1);
 		}
+
+		printf("Votre grille :\n");
+    	printGrid(grid);
+		printf("Grille de l'adversaire :\n");
+		printOponentGrid(opGrid);
 		
-		if (write(soc, "buff", 4)<0)
-			printf("merde\n");
-		//lanceAttack(soc);
+		lanceAttack(soc);
 		
    	}
     close(soc);
