@@ -90,58 +90,72 @@ void* prise_en_charge(int soc)
     	
     	PositionLetterDigit p;
 
-	    memcpy( &p.letter, buffer+sizeof(resultAttack), sizeof(char) );
+	memcpy( &p.letter, buffer+sizeof(char)+sizeof(resultAttack), sizeof(char) );
 
-	    char subbuff[3];
-	    memcpy( subbuff, buffer+sizeof(resultAttack)+sizeof(char), 2 );
-	    subbuff[2] = '\0';
-	    p.y = atoi(subbuff);
+	char subbuff[3];
+	memcpy( subbuff, buffer+sizeof(resultAttack)+2*sizeof(char), 2 );
+	subbuff[2] = '\0';
+	p.y = atoi(subbuff);
 
     	printf("attack en %c%d resultat %s\n", p.letter, p.y, toString(resA));
 
     	if (resA != REPEAT && resA!= ERROR){
+		
     		updateOpGrid(p, resA);
-
+		
     		printf("Grille de l'adversaire :\n");
     		printOponentGrid(opGrid);
 
-    	}
+		if (resA==WIN){
+			printf("Vous avez gagné.\n");
+			exit(0);
+		}
 
-    	prise_en_charge(soc);
+		printf("Attente de l'attaque de l'adversaire...\n");
+		prise_en_charge(soc);
+    	}
+	else{
+		printf("Attaque incorrecte, reessayez.\n");
+		lanceAttack(soc);	
+	}
+    	
     }
     else if (buffer[0] =='1'){
-		printf("attaque recue\n");
-		
-		PositionLetterDigit p;
-	    p.letter = buffer[1];
-	    char subbuff[3];
-	    memcpy( subbuff, &buffer[2], 2 );
-	    subbuff[2] = '\0';
-	    p.y = atoi(subbuff);
-	  
-	    resultAttack resA= attack(&grid, p);
+	printf("attaque recue\n");
+
+	PositionLetterDigit p;
+	p.letter = buffer[1];
+	char subbuff[3];
+	memcpy( subbuff, &buffer[2], 2 );
+	subbuff[2] = '\0';
+	p.y = atoi(subbuff);
+
+	resultAttack resA= attack(&grid, p);
 
     	printf("attaqué en %c%d resultat %s\n", p.letter, p.y, toString(resA));
 
-    	printf("Votre grille :\n");
-    	printGrid(grid);
+	char res[10];
 
+	res[0]= '0';
+
+    	memcpy(res+sizeof(char), &resA, sizeof(resultAttack));
+    	memcpy(res+sizeof(char)+sizeof(resultAttack), buffer+sizeof(char), 3*sizeof(char));
+	
+    	write(soc, res, 10);
 
     	if (resA != REPEAT && resA!= ERROR){
-
-    		char res[10];
-	    	res[0] = '0';
-
-		    memcpy(res+sizeof(char), &resA, sizeof(resultAttack));
-		    memcpy(res+sizeof(resultAttack), buffer+sizeof(char), 3*sizeof(char));
-			
-		    write(soc, res, 10);
-		    
-		    lanceAttack(soc); 
+		if (resA==WIN){
+			printf("Vous avez perdu.\n");
+			exit(0);
 		}
-		else{
-			prise_en_charge(soc);
-		}
+		printf("Votre grille :\n");
+    		printGrid(grid);
+
+	    lanceAttack(soc); 
+	}
+	else{
+		prise_en_charge(soc);
+	}
 
     }
     
@@ -329,6 +343,8 @@ int main(int argc, char **argv) {
     		printf("Grille de l'adversaire :\n");
     		printOponentGrid(opGrid);
 
+		printf("Attente de l'attaque de l'adversaire...\n");
+
         	prise_en_charge(nouv_soc);
         //}
 
@@ -361,7 +377,7 @@ int main(int argc, char **argv) {
 		}
 
 		printf("Votre grille :\n");
-    	printGrid(grid);
+    		printGrid(grid);
 		printf("Grille de l'adversaire :\n");
 		printOponentGrid(opGrid);
 		
