@@ -20,12 +20,7 @@ static void app(void)
         }else{
 		    printf("Nouveau client hébergé.\n");
 
-			//int longueur;
 			char buff[50];
-		   
-			/*if ((longueur = read(csock, buff, sizeof(buff))) <= 0){
-				continue;
-			}*/
 				
 			if (!isInGame){
 				isInGame=true;

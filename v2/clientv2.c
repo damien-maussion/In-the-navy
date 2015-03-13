@@ -23,6 +23,12 @@ void lanceAttack(int sock){
 		perror("send()");
 		exit(-1);
 	}else{
+		char b[100];
+		if((recv(sock, b, 100, 0)) < 0){
+			perror("recv()");
+			exit(-1);
+		}
+		printf("Résultat attaque : %s\n",b);
 		printf("Grille de votre adversaire :\n %s\n", oponentGrid);
 		printf("Votre grille :\n %s\n", getGrid(grid));
 	}
@@ -33,21 +39,35 @@ void lanceAttack(int sock){
 
 void attente(int csock){
 	printf("Attendez que votre adversaire joue.\n");
-	char buffer[256];
+	char buffer[10];
 	int n = 0;
 	if((n = recv(csock, buffer, sizeof buffer - 1, 0)) < 0){
 		perror("recv()");
 		exit(-1);
 	}
 	buffer[n] = '\0';
+	printf("%s\n",buffer);
 	if(buffer[0] == '-'){ 				//déconnexion
 		printf("%s\n",buffer);
 		printf("Partie terminée. Reconnexion avec le serveur de jeu en cours...\n");
 		partieEnCours = false;
 	}else if(buffer[0] == '1'){			//attaque
+		PositionLetterDigit p;
+        p.letter = buffer[1];
+        char subbuff[3];
+        memcpy(subbuff, &buffer[2], 2);
+        subbuff[2] = '\0';
+        p.y = atoi(subbuff);
+        char* res = toString(attack(&grid, p));
+        
 		printf("Grille de votre adversaire :\n %s\n", oponentGrid);
 		printf("Votre grille :\n %s\n", getGrid(grid));
 		printf("%s\n",buffer);
+        
+		if(send(csock, res, sizeof(res)+1, 0) < 0){
+			perror("send()");
+			exit(-1);
+		}
 	}else{								//erreur
 		perror("erreur : données incomprises");
 	}
@@ -69,43 +89,7 @@ void receptionGrille(){
 		perror("recv()");
 		exit(-1);
 	}
-		
 }
-
-/*void* prise_en_charge(void *args){
-   //cast
-    args_traitement *args_t = args;
-    
-    char buffer[256];
-    int longueur;
-   
-    if ((longueur = read(args_t->soc, buffer, sizeof(buffer))) <= 0) 
-        return NULL;
-    
-    char c= buffer[0];
-    if (c=='0'){		
-    	printf("%s",buffer);
-    	printf("pwet\n");
-    }else if (c=='1'){ 					//attaque
-    	printf("attaque recue\n");
-    	PositionLetterDigit p;
-        p.letter = buffer[1];
-        char subbuff[3];
-        memcpy( subbuff, &buffer[2], 2 );
-        subbuff[2] = '\0';
-        p.y = atoi(subbuff);
-        
-        char res[10];
-        res[0] = '0';
-        resultAttack resA= attack(&grid, p);
-        memcpy(res+1, &resA, sizeof(resultAttack));
-        memcpy(res+sizeof(resultAttack), buffer+1, 3);
-
-        write(args_t->soc, res, 10);
-        lanceAttack(args_t->soc);    
-        printf("attack\n");
-    }
-}*/
 
 void byebye(void){
 	printf("\nVous êtes désormais déconnecté(e).\n");
