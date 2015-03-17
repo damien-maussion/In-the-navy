@@ -29,16 +29,19 @@ typedef struct servent 		servent;
 sockaddr_in adresse_locale_globale; /* adresse de socket local */
 
 Grid grid;
-char oponentGrid[1024];
+int opGrid[GRID_WIDTH][GRID_HEIGHT];
 bool partieEnCours = false;
-int adversaire;
+char adr_adversaire[50];
+int adversaire = -1;
+int serveur = -1;
+int sock_client = -1;
 TrameBuffer tb;
 
+void reinitOponentGrid();
+void updateOpGrid(PositionLetterDigit p, resultAttack res);
 void lanceAttack(int sock);
 void attente(int csock);
-void envoiGrille();
-void receptionGrille();
-//void* prise_en_charge(void *args);
+void connexionAuServeur();
 void byebye(void);
 void ctrlC_Handler(int e);
 

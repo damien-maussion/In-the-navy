@@ -112,38 +112,6 @@ void init(Grid *g){
 
 }
 
-/*
-void print(Grid g){
-	int i,j;
-	printf("\n   |");
-	for (j =0;j<GRID_WIDTH;j++){
-		printf("%c ",'A'+j);
-	}
-	printf("\n----");
-	for (j =0;j<GRID_WIDTH;j++){
-		printf("--");
-	}
-	printf("\n");
-
-	for (i=0;i<GRID_HEIGHT;i++){
-		printf("%d%s |", (i+1), ((i+1)<10?" ":""));
-		//std::cout <<(i+1)<< ((i+1)<10?" ":"") <<" |";
-		for (j =0;j<GRID_WIDTH;j++){
-			//std::cout << grid[j][i]<<" ";
-			if (g.grid[j][i]==-1){
-				printf("%s%c%s ", CYAN, 'F', RESET);
-			}
-			else if (g.grid[j][i] <-1){
-				printf("%s%d%s ", RED, (-1*g.grid[j][i]), RESET);
-			}
-			else{
-				printf("%d ",g.grid[j][i]);
-			}
-		}
-		printf("\n");
-	}
-}*/
-
 int getGridStringLength(){
 	int nb_rows_display = GRID_HEIGHT+2;
 	int max_row_size = 4 +(2 + 10)*GRID_WIDTH +1;  // 4 : "i  |", 2: "0 ", 10 : 2*strlen(CYAN), 1: "\n"
@@ -205,59 +173,6 @@ char* getGrid(Grid g){
 void printGrid(Grid g){
 	printf("%s\n", getGrid(g));
 }
-
-/*
-char* getOponentGrid(Grid g){
-
-	int str_length = getGridStringLength();
-	char *str = malloc(str_length * sizeof(char));
-	strcat(str, "   |");
-
-	int i,j;
-	for (j =0;j<GRID_WIDTH;j++){
-		char c[2];
-		snprintf(c, 2,"%c",('A'+j));
-		strcat(str,c);
-		strcat(str," ");
-	}
-
-	strcat(str,"\n----");
-	for (j =0;j<GRID_WIDTH;j++){
-		strcat(str, "--");
-	}
-	strcat(str, "\n");
-
-	for (i=0;i<GRID_HEIGHT;i++){
-		char dig[3];
-		snprintf(dig, 3,"%d",(i+1));
-
-		strcat(str, dig);
-		strcat(str, ((i+1)<10?"  |":" |"));
-		for (j =0;j<GRID_WIDTH;j++){
-			if (g.grid[j][i]==-1){
-				strcat(str, CYAN);
-				strcat(str, "F ");
-				strcat(str, RESET);
-			}
-			else if (g.grid[j][i]<-1){
-				strcat(str, RED);
-				strcat(str, "X ");
-				strcat(str, RESET);
-			}
-			else{
-				strcat(str, "O ");
-			}
-		}
-		strcat(str, "\n");
-	}
-
-	return str;
-}
-
-void printOponentGrid(Grid g){
-	printf("%s\n", getOponentGrid(g));
-}
-*/
 
 void getOponentGrid(Grid g, int tab[GRID_WIDTH][GRID_HEIGHT]){
 	for (int i=0; i<GRID_WIDTH;i++){
@@ -356,24 +271,6 @@ resultAttack attack(Grid *g, PositionLetterDigit p){
 	return attackPos(g, toPosition(p));
 }
 
-/*
-int main(){
-	srand(time(NULL));
-
-	PositionLetterDigit pld = {letter:'A', y:4};
-	Position p = toPosition(pld);
-	printf("%d-%d\n", p.x, p.y);
-
-
-	Grid g;
-	init(&g);
-	printGrid(g);
-	printOponentGrid(g);
-	
-	return 0;
-}
-*/
-
 char* serializeTrame(Trame t){
     char * str = malloc( TAILLE_MAX_DATA_TRAME * sizeof(char) + 3 * sizeof(int));
     
@@ -405,7 +302,6 @@ Trame deserializeTrame(char * str){
 
 void receveTrame(TrameBuffer *tbuf, Trame t){
 	printf("trame %d-%d\n", t.idTrame, t.index);
-	//printf("receveTrame : idTrame : %d, nbTrameReceved: %d, finish: %d\n", tbuf->idTrame, tbuf->nbTrameReceved, tbuf->finish);
 	
 	if (tbuf->idTrame < t.idTrame) {
 		//printf("taille : %d\n", t.taille);
@@ -413,16 +309,10 @@ void receveTrame(TrameBuffer *tbuf, Trame t){
 		tbuf->nbTrameReceved = 0;
 		tbuf->finish = false;
 	}
-	//printf("receveTrame 2: idTrame : %d, nbTrameReceved: %d, finish: %d\n", tbuf->idTrame, tbuf->nbTrameReceved, tbuf->finish);
-	
-	//strncpy( tbuf->data+ t.index, t.data, TAILLE_MAX_DATA_TRAME);
 	memcpy( tbuf->data + t.index, t.data, TAILLE_MAX_DATA_TRAME);
 	
-	//printf("receveTrame 3: idTrame : %d, nbTrameReceved: %d, finish: %d\n", tbuf->idTrame, tbuf->nbTrameReceved, tbuf->finish);
 	tbuf->nbTrameReceved++;
-	//printf("receveTrame 4: idTrame : %d, nbTrameReceved: %d, finish: %d\n", tbuf->idTrame, tbuf->nbTrameReceved, tbuf->finish);
 	tbuf->finish = tbuf->nbTrameReceved * TAILLE_MAX_DATA_TRAME >= t.taille;
-	//printf("receveTrame after : idTrame : %d, nbTrameReceved: %d, finish: %d\n", tbuf->idTrame, tbuf->nbTrameReceved, tbuf->finish);
 }
 
 

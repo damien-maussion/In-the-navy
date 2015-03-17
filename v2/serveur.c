@@ -60,15 +60,6 @@ void* prise_en_charge_client(void* args)
 void byebye(void){
 	
 	char *str = "-Le serveur est désormais hors-ligne.\n\0";
-	/*
-	BroadCast(str, strlen(str));
-	Liste_clients *it = clients;
-    while(it->next){
-    	Liste_clients *tmp = it;
-    	it = it->next;
-    	free(tmp);
-    }
-    */
 }
 
 void ctrlC_Handler(int e){

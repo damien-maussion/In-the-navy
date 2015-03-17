@@ -12,9 +12,12 @@ static void app(void)
 
 		sockaddr_in csin = { 0 };
 		int sinsize = sizeof(csin);
-		int csock;
-		
-		if ((csock = accept(sock, (sockaddr *)&csin, &sinsize)) == -1){
+		if(client != -1){
+			//réception d'un ping ou message du client au cas où il se déconnecte
+			read_client(client);
+		}
+		int tmp;
+		if((tmp = accept(sock, (sockaddr *)&csin, &sinsize)) == -1){
             perror("erreur : impossible d'accepter la connexion avec le client.");
             continue;
         }else{
@@ -24,42 +27,31 @@ static void app(void)
 				
 			if (!isInGame){
 				isInGame=true;
-				client = csin.sin_addr;
-				if(send(csock, "fake", 4, 0) < 0)
-				{
+				adr_client = csin.sin_addr;
+				//envoi d'un message au client pour lui dire d'attendre un adversaire
+				if(send(tmp, "fake", 4, 0) < 0){
 					perror("send()");
 					exit(-1);
 				}
-			}
-			else{
-				if(send(csock, inet_ntoa(client), 50, 0) < 0)
-				{
+			}else{
+				//envoi d'un ping au client
+				write_client(client);
+				//envoi de l'adresse d'un client à celui enregistré pour qu'ils communiquent
+				if(send(tmp, inet_ntoa(adr_client), 50, 0) < 0){
 					perror("send()");
 					exit(-1);
 				}
 				isInGame=false;
 			}
+			client = tmp;
 		}
-		
-		/*char buffer[50];
-		int n = 0;
-		if((n = recv(csock, buffer, 49, 0)) < 0){
-			perror("recv()");
-			n = 0;
-		}
-   		buffer[n] = 0;
-   		printf("%s\n",buffer);*/
-		
-		/* //after connecting the client sends its name 
-		if(read_client(csock, buffer) == -1){
-			continue;
-		}*/
 	}
 	end_connection(sock);
 }
 
 static int init_connection(void)
 {
+	//Initialisation de la socket du serveur
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	sockaddr_in sin = { 0 };
 
@@ -85,7 +77,7 @@ static int init_connection(void)
 	  exit(-1);
 	}
 	
-	printf("numero de port pour la connexion au serveur : %d \n", ntohs(sin.sin_port));  
+	printf("Numero de port pour la connexion au serveur : %d \n", ntohs(sin.sin_port));  
     printf("Lancement de l'écoute\n");
     
 	return sock;
@@ -96,32 +88,48 @@ static void end_connection(int sock)
    close(sock);
 }
 
-static int read_client(int sock, char *buffer)
+static int read_client(int sock)
 {
-   int n = 0;
-
-   /*if((n = recv(sock, buffer, BUF_SIZE - 1, 0)) < 0)
-   {
-      perror("recv()");
-      n = 0;
-   }
-
-   buffer[n] = 0;*/
-
-   return n;
+	int n = 0;
+	char buffer[10];
+	if((n = recv(sock, buffer, 10, 0)) < 0){
+		perror("recv()");
+		n = 0;
+	}
+	if(buffer[0] == '-'){
+		//réception d'un message de déconnexion de la part du client
+		close(client);
+		client = -1;
+		printf("Client déconnecté.\n");
+		isInGame=false;
+	}
+	
+	return n;
 }
 
-static void write_client(int sock, const char *buffer)
+static void write_client(int sock)
 {
-   /*if(send(sock, buffer, strlen(buffer), 0) < 0)
-   {
-      perror("send()");
-      exit(errno);
-   }*/
+	char* buffer = "ping";
+	if(sock != -1){
+		//envoi d'un ping au client
+		if(send(sock, buffer, strlen(buffer), 0) < 0){
+			perror("send()");
+			exit(-1);
+		}
+	}
 }
 
 void byebye(void){
-	printf("Le serveur est désormais hors-ligne.\n");
+	char buffer[100] = "*\nLe serveur est hors-ligne.";
+	printf("%s\n",buffer);
+	if(client != -1){
+		//envoi d'un message au client pour prévenir que le serveur est hors-ligne
+		if(send(client, buffer, 100, 0) < 0){
+			perror("send()");
+			exit(-1);
+		}
+		close(client);
+	}
 }
 
 void ctrlC_Handler(int e){

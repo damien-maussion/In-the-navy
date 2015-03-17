@@ -89,12 +89,12 @@ void* prise_en_charge(int soc)
     	
     	PositionLetterDigit p;
 
-	memcpy( &p.letter, buffer+sizeof(char)+sizeof(resultAttack), sizeof(char) );
+		memcpy( &p.letter, buffer+sizeof(char)+sizeof(resultAttack), sizeof(char) );
 
-	char subbuff[3];
-	memcpy( subbuff, buffer+sizeof(resultAttack)+2*sizeof(char), 2 );
-	subbuff[2] = '\0';
-	p.y = atoi(subbuff);
+		char subbuff[3];
+		memcpy( subbuff, buffer+sizeof(resultAttack)+2*sizeof(char), 2 );
+		subbuff[2] = '\0';
+		p.y = atoi(subbuff);
 
     	printf("Attaque en %c%d, resultat %s\n", p.letter, p.y, toString(resA));
 
@@ -105,56 +105,49 @@ void* prise_en_charge(int soc)
     		printf("Grille de l'adversaire :\n");
     		printOponentGrid(opGrid);
 
-		if (resA==WIN){
-			printf("Vous avez gagné.\n");
-			exit(0);
-		}
+			if (resA==WIN){
+				printf("Vous avez gagné.\n");
+				exit(0);
+			}
 
-		printf("Attente de l'attaque de l'adversaire...\n");
-		prise_en_charge(soc);
-    	}
-	else{
-		printf("Attaque incorrecte, reessayez.\n");
-		lanceAttack(soc);	
-	}
+			printf("Attente de l'attaque de l'adversaire...\n");
+			prise_en_charge(soc);
+		}else{
+			printf("Attaque incorrecte, reessayez.\n");
+			lanceAttack(soc);	
+		}
     	
-    }
-    else if (buffer[0] =='1'){
+    }else if (buffer[0] =='1'){
 
-	PositionLetterDigit p;
-	p.letter = buffer[1];
-	char subbuff[3];
-	memcpy( subbuff, &buffer[2], 2 );
-	subbuff[2] = '\0';
-	p.y = atoi(subbuff);
+		PositionLetterDigit p;
+		p.letter = buffer[1];
+		char subbuff[3];
+		memcpy( subbuff, &buffer[2], 2 );
+		subbuff[2] = '\0';
+		p.y = atoi(subbuff);
 
-	resultAttack resA= attack(&grid, p);
+		resultAttack resA= attack(&grid, p);
 
-    	printf("Attaqué en %c%d, resultat %s\n", p.letter, p.y, toString(resA));
+		printf("Attaqué en %c%d, resultat %s\n", p.letter, p.y, toString(resA));
 
-	char res[10];
-
-	res[0]= '0';
-
-    	memcpy(res+sizeof(char), &resA, sizeof(resultAttack));
-    	memcpy(res+sizeof(char)+sizeof(resultAttack), buffer+sizeof(char), 3*sizeof(char));
+		char res[10];
+		res[0]= '0';
+		memcpy(res+sizeof(char), &resA, sizeof(resultAttack));
+		memcpy(res+sizeof(char)+sizeof(resultAttack), buffer+sizeof(char), 3*sizeof(char));
 	
-    	write(soc, res, 10);
+		write(soc, res, 10);
 
-    	if (resA != REPEAT && resA!= ERROR){
-		if (resA==WIN){
-			printf("Vous avez perdu.\n");
-			exit(0);
+		if (resA != REPEAT && resA!= ERROR){
+			if (resA==WIN){
+				printf("Vous avez perdu.\n");
+				exit(0);
+			}
+			printf("Votre grille :\n");
+			printGrid(grid);
+			lanceAttack(soc); 
+		}else{
+			prise_en_charge(soc);
 		}
-		printf("Votre grille :\n");
-    		printGrid(grid);
-
-	    lanceAttack(soc); 
-	}
-	else{
-		prise_en_charge(soc);
-	}
-
     }
     
 }
@@ -222,28 +215,10 @@ int main(int argc, char **argv) {
 		exit(1);
     }
     
-    /* copie caractere par caractere des infos de ptr_host vers adresse_locale_globale */
     bcopy((char*)ptr_host->h_addr, (char*)&adresse_locale_globale.sin_addr, ptr_host->h_length);
-    adresse_locale_globale.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
+    adresse_locale_globale.sin_family = AF_INET;
     
-    /* 2 facons de definir le service que l'on va utiliser a distance */
-    /* (commenter l'une ou l'autre des solutions) */
-    
-    /*-----------------------------------------------------------*/
-    /* SOLUTION 1 : utiliser un service existant, par ex. "irc" */
-    /*
-    if ((ptr_service = getservbyname("irc","tcp")) == NULL) {
-	perror("erreur : impossible de recuperer le numero de port du service desire.");
-	exit(1);
-    }
-    adresse_locale_globale.sin_port = htons(ptr_service->s_port);
-    */
-    /*-----------------------------------------------------------*/
-    
-    /*-----------------------------------------------------------*/
-    /* SOLUTION 2 : utiliser un nouveau numero de port */
     adresse_locale_globale.sin_port = htons(5000);
-    /*-----------------------------------------------------------*/
 
     printf("numero de port pour la connexion au serveur : %d \n", ntohs(adresse_locale_globale.sin_port));
     
