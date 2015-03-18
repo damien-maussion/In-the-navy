@@ -13,7 +13,7 @@ static void app(void)
 		sockaddr_in csin = { 0 };
 		int sinsize = sizeof(csin);
 		if(client != -1){
-			//réception d'un ping ou message du client au cas où il se déconnecte
+			//réception d'un ping ou message du client dans le cas où il se déconnecte
 			read_client(client);
 		}
 		int tmp;
@@ -52,11 +52,10 @@ static void app(void)
 static int init_connection(void)
 {
 	//Initialisation de la socket du serveur
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	int sock;
 	sockaddr_in sin = { 0 };
 
-	if(sock == -1)
-	{
+	if((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1){
 	  perror("socket()");
 	  exit(-1);
 	}
@@ -65,14 +64,12 @@ static int init_connection(void)
 	sin.sin_port = htons(PORT_SERVEUR);
 	sin.sin_family = AF_INET;
 
-	if(bind(sock,(sockaddr *) &sin, sizeof sin) == -1)
-	{
+	if(bind(sock,(sockaddr *) &sin, sizeof sin) == -1){
 	  perror("bind()");
 	  exit(-1);
 	}
 
-	if(listen(sock, MAX_CLIENTS) == -1)
-	{
+	if(listen(sock, MAX_CLIENTS) == -1){
 	  perror("listen()");
 	  exit(-1);
 	}
@@ -107,8 +104,8 @@ static int read_client(int sock)
 	return n;
 }
 
-static void write_client(int sock)
-{
+static void write_client(int sock){
+
 	char* buffer = "ping";
 	if(sock != -1){
 		//envoi d'un ping au client
@@ -120,6 +117,7 @@ static void write_client(int sock)
 }
 
 void byebye(void){
+
 	char buffer[100] = "*\nLe serveur est hors-ligne.";
 	printf("%s\n",buffer);
 	if(client != -1){
@@ -136,8 +134,8 @@ void ctrlC_Handler(int e){
     exit(0);
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv){
+
     atexit(byebye);
     signal(SIGINT, ctrlC_Handler);
     

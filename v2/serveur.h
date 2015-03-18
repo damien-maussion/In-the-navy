@@ -12,7 +12,6 @@
 #include "../grid.h" 
 #include "../annexe.c" 
 
-#define CRLF "\r\n"
 #define PORT_SERVEUR 5000
 #define MAX_CLIENTS 10
 

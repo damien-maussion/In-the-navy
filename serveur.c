@@ -127,8 +127,6 @@ void sendResponseTo(char * str, int length, sockaddr_in add){
     idTrame++;
 }
 
-
-/* POURQUOI CETTE FONCTION SORT UNE GRILLE AU LIEU DE LA STRING D'EXTINCTION DE SERVEUR ??? (VOIR S'IL Y A UN LIEN AVEC LE PROBLEME COURANT)*/
 void BroadCast(char* str, int length){
 
 	int offset = 0;

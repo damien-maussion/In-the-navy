@@ -28,7 +28,7 @@ void updateOpGrid(PositionLetterDigit p, resultAttack res){
 		opGrid[pos.x][pos.y]=-2;
 }
 
-void lanceAttack(int sock){
+void lanceAttaque(int sock){
 	char pos[3];
 	char buffer[4] = "1";
 
@@ -109,7 +109,7 @@ void attente(int csock){
 		}else{
 			//Résultat invalide, rejouer
 			printf("Attaque incorrecte, reessayez.\n");
-			lanceAttack(csock);	
+			lanceAttaque(csock);	
 		}
     	
     }else if(buffer[0] == '1'){			//réception d'une attaque
@@ -149,7 +149,7 @@ void attente(int csock){
 			printf("Votre grille :\n");
 			printGrid(grid);
 			//A vous d'attaquer
-			lanceAttack(csock);
+			lanceAttaque(csock);
 		}else{
 			attente(csock);
 		}
@@ -282,7 +282,7 @@ void connexionAuServeur(){
 			printf("Grille de l'adversaire :\n");
 			printOponentGrid(opGrid);
 
-			lanceAttack(adversaire);
+			lanceAttaque(adversaire);
 		}
    	}
 }
@@ -320,7 +320,7 @@ int main(int argc, char **argv){
     signal(SIGINT, ctrlC_Handler);
       
     if (argc != 2) {
-		perror("usage : client <adresse-serveur>");
+		perror("usage : ./client.exe <adresse-serveur>");
 		exit(1);
     }
    

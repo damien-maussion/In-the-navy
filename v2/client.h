@@ -39,7 +39,7 @@ TrameBuffer tb;
 
 void reinitOponentGrid();
 void updateOpGrid(PositionLetterDigit p, resultAttack res);
-void lanceAttack(int sock);
+void lanceAttaque(int sock);
 void attente(int csock);
 void connexionAuServeur();
 void byebye(void);
