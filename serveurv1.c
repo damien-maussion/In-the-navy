@@ -16,18 +16,14 @@ static int app(void){
 	char *message;
 
 	int c = sizeof(struct sockaddr_in);
-    while((nouv_client = accept(sock, (struct sockaddr *)&client, (socklen_t*)&c)) )
+    while((nouv_client = accept(sock, (struct sockaddr *)&client, (socklen_t*)&c)))
     {
         printf("Nouveau client hébergé.\n");
-         
-        //Reply to the client
-        message = "Hello Client , I have received your connection. And now I will assign a handler for you\n";
-        //write(new_socket , message , strlen(message));
-        send(nouv_client, message, strlen(message), 0);
          
         pthread_t sniffer_thread;
         csock = malloc(1);
         *csock = nouv_client;
+        ajout_client(nouv_client);
          
         if(pthread_create( &sniffer_thread , NULL ,  connection_handler , (void*) csock) < 0){
             perror("could not create thread");
@@ -45,39 +41,84 @@ static int app(void){
     }
 }
 
+void ajout_client(int sock){
+	Liste_clients *nouveau = malloc(sizeof(Liste_clients));
+	nouveau->socket = sock;
+	nouveau->next = NULL;
+		
+	if(clients == NULL){
+		clients = nouveau;
+		//puts("la");
+	}else{
+		Liste_clients *tmp = clients;
+		while(tmp->next != NULL){
+			tmp = tmp->next;
+		}		
+		tmp->next = nouveau;
+		//puts("ici");
+	}
+	/*Liste_clients *tmp = clients;
+	while(tmp != NULL){
+		printf("envoi au client %d\n",tmp->socket);
+		send(tmp->socket, "cc", 2, 0);
+		tmp = tmp->next;
+	}*/
+}
+
+void envoiTrame(int sock, char* msg){
+	int offset = 0;
+	int length = strlen(msg);
+    while (offset < length){
+        Trame t;
+        t.idTrame = idTrame;
+        t.index = offset;
+        t.taille = length;
+        memcpy(t.data, msg+offset, TAILLE_MAX_DATA_TRAME);
+        offset+= TAILLE_MAX_DATA_TRAME;
+        char *str_trame = serializeTrame(t);
+    	int length_trame = TAILLE_MAX_DATA_TRAME + 3*sizeof(int);
+        //write(sd,serializeTrame(t),TAILLE_MAX_DATA_TRAME + 3*sizeof(int));
+        //sendTrameTo(t, add);
+        if((send(sock, str_trame, length_trame, 0)) < 0){
+        	perror("send()");
+        	exit(-1);
+        }
+    }
+    idTrame++;
+}
+
 void *connection_handler(void *socket_desc){
 
-    //Get the socket descriptor
-    int sock = *(int*)socket_desc;
-    int read_size;
-    char *message , client_message[2000];
-     
-    //Send some messages to the client
-    message = "Greetings! I am your connection handler\n";
-    //write(sock , message , strlen(message));
-    send(sock, message, strlen(message), 0);
-     
-    message = "Now type something and i shall repeat what you type \n";
-    //write(sock , message , strlen(message));
-    send(sock, message, strlen(message), 0);
+	int sock = *(int*)socket_desc;
+	int read_size;
+	char message[2000], client_message[2000];
+	char *m = "\nChoisissez des coordonnées d'attaque: ";
+    
+    //Message d'arrivée sur le serveur
+    char *bienvenue = "*\nBienvenue sur le serveur de jeu de In-The-Navy.\n Tentez de couler les bateaux de la grille avant les autres joueurs.\n*\n";
+    strcat(message, bienvenue);strcat(message, m);
+	envoiTrame(sock, message);
      
     //Receive a message from client
-    while( (read_size = recv(sock , client_message , 2000 , 0)) > 0 ){
-    
-        //Send the message back to client
-        //write(sock , client_message , strlen(client_message));
-        send(sock, client_message, strlen(client_message), 0);
+    while((read_size = recv(sock , client_message , 2000 , 0)) > 0){
+        if(client_message[0] == '1'){
+			//printf("reception attaque + diff\n");
+			char n[20];
+			sprintf(n, " par le client %d", sock);
+			strcat(client_message, n);
+			strcat(client_message, m);
+			diffusion(client_message);
+		}
     }
      
     if(read_size == 0){
-        puts("Client disconnected");
+        printf("Le client %d s'est déconnecté.\n", (sock-3));
         fflush(stdout);
         remove_client(sock);
     }else if(read_size == -1){
-        perror("recv failed");
+        perror("recv()");
     }
-         
-    //Free the socket pointer
+
     free(socket_desc);
      
     return 0;
@@ -210,7 +251,7 @@ static void write_client(int sock, const char *buffer){
 	}*/
 }
 
-void BroadCast(char* str){
+void diffusion(char* str){
 
 	int offset = 0;
 	int length = strlen(str);
@@ -233,13 +274,14 @@ void BroadCast(char* str){
 		}
     }
     idTrame++;
+    //send(clients->socket, str, strlen(str), 0);
 }
 
 void byebye(void){
 
-	char buffer[100] = "*\nLe serveur est hors-ligne.";
+	char buffer[100] = "-\nLe serveur est hors-ligne.\n-";
 	printf("%s\n",buffer);
-	BroadCast(buffer);
+	diffusion(buffer);
 	clear_clients();
 	end_connection(serveur);
 }

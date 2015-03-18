@@ -32,7 +32,6 @@ void lanceAttaque(int sock){
 	char pos[3];
 	char buffer[4] = "1";
 
-	printf ("Choisissez des coordonnées d'attaque: ");
 	scanf ("%3s",pos);  
 	
 	strcat(buffer, pos);
@@ -42,120 +41,7 @@ void lanceAttaque(int sock){
 		perror("send()");
 		exit(-1);
 	}
-	
-	//en attente d'une réponse
-	/*if(partieEnCours)
-		attente(sock);
-	else
-		printf("err: partie terminée\n");*/
 }
-
-/*void attente(int csock){
-	char buffer[100];
-	char buf[100] = "0";
-	int n = 0;
-
-	//réception d'un message de l'adversaire
-	if((n = recv(csock, buffer, sizeof(buffer), 0)) < 0){
-		perror("recv()");
-		exit(-1);
-	}
-
-	if(buffer[0] == '-'){				//déconnexion
-		printf("%s\n",buffer);
-		printf("Déconnexion de votre adversaire. Reconnexion avec le serveur de jeu en cours...\n");
-		partieEnCours = false;
-		adversaire = -1;
-		//reconnexion au serveur
-		connexionAuServeur();
-	}else if (buffer[0]== '0'){			//réception d'un resultat
-
-		//Traitement du résultat
-    	resultAttack resA;
-    	memcpy(&resA, buffer+sizeof(char), sizeof(resultAttack));
-    	
-    	PositionLetterDigit p;
-
-		memcpy( &p.letter, buffer+sizeof(char)+sizeof(resultAttack), sizeof(char) );
-
-		char subbuff[3];
-		memcpy( subbuff, buffer+sizeof(resultAttack)+2*sizeof(char), 2 );
-		subbuff[2] = '\0';
-		p.y = atoi(subbuff);
-
-    	printf("Attaque en %c%d, resultat %s\n", p.letter, p.y, toString(resA));
-
-    	if (resA != REPEAT && resA!= ERROR){
-			
-			//Résultat valide; prise en compte du résultat
-    		updateOpGrid(p, resA);
-		
-    		printf("Grille de l'adversaire :\n");
-    		printOponentGrid(opGrid);
-
-			if (resA==WIN){
-				printf("Vous avez gagné.\n");
-				partieEnCours = false;
-				printf("Partie terminée. Reconnexion avec le serveur de jeu en cours...\n");
-				close(adversaire);
-				adversaire = -1;
-				//reconnexion au serveur
-				connexionAuServeur();
-			}
-
-			printf("Attentez que votre adversaire joue.\n");
-			attente(csock);
-		}else{
-			//Résultat invalide, rejouer
-			printf("Attaque incorrecte, reessayez.\n");
-			lanceAttaque(csock);	
-		}
-    	
-    }else if(buffer[0] == '1'){			//réception d'une attaque
-	    
-	    //Traitement de l'attaque
-		PositionLetterDigit p;
-		p.letter = buffer[1];
-        char subbuff[3];
-        memcpy(subbuff, &buffer[2], 2);
-        subbuff[2] = '\0';
-        p.y = atoi(subbuff);
-        
-        resultAttack resA= attack(&grid, p);
-        printf("Attaqué en %c%d, résultat : %s\n", p.letter, p.y, toString(resA));
-        
-        char res[10];
-		res[0]= '0';
-		memcpy(res+sizeof(char), &resA, sizeof(resultAttack));
-		memcpy(res+sizeof(char)+sizeof(resultAttack), buffer+sizeof(char), 3*sizeof(char));
-        
-        //Envoi du résultat de l'attaque à l'attaquant
-        if(send(csock, res, 10, 0) < 0){
-			perror("send()");
-			exit(-1);
-		}
-		
-        if (resA != REPEAT && resA!= ERROR){
-			if (resA==WIN){
-				printf("Vous avez perdu.\n");
-				partieEnCours = false;
-				printf("Partie terminée. Reconnexion avec le serveur de jeu en cours...\n");
-				close(adversaire);
-				adversaire = -1;
-				//reconnexion au serveur
-				connexionAuServeur();
-			}
-			printf("Votre grille :\n");
-			printGrid(grid);
-			//A vous d'attaquer
-			lanceAttaque(csock);
-		}else{
-			attente(csock);
-		}
-	}else{								//erreur
-		perror("erreur : données incomprises");
-	}
-}*/
 
 void connexionAuServeur(){
 
@@ -176,125 +62,84 @@ void connexionAuServeur(){
 		exit(1);
     }
     
-    //Envoi d'un ping au serveur
-    /*if(send(serveur, "ping", 2, 0) < 0){
-		perror("send()");
-		exit(-1);
-	}*/
-    
-    /*srand(time(NULL));
-    init(&grid);
-    reinitOponentGrid();*/
-    
     printf("Connexion au serveur établie. \n");
     
-    //memset(adr_adversaire, 0, sizeof(adr_adversaire));
-    int n = 0;
-    char bu[100];
-	if((n = recv(serveur, bu, 100, 0)) < 0){
-		perror("recv()");
-		exit(-1);
-	}
-	printf("%s\n",bu);
-	if((n = recv(serveur, bu, 100, 0)) < 0){
-		perror("recv()");
-		exit(-1);
-	}
-	printf("%s\n",bu);
+	tb.idTrame=-1;
+    tb.finish=false;
+
+	pthread_t thread_listen;
+    if (pthread_create(&thread_listen, NULL, ecoute, NULL)){
+        perror("Impossible creer thread listen");
+        exit(-1);
+    }
+    
+    while(1){
+    	lanceAttaque(serveur);
+    }
 	
-	while(1){
-		lanceAttaque(serveur);
-	}
+	if (pthread_join(thread_listen, NULL)){
+        perror("Impossible joindre thread");
+        exit(-1);
+    }
+}
 
-    /*if (strcmp(adr_adversaire, "fake")==0){
-    	//Client devient serveur
-    	sock_client = socket(AF_INET, SOCK_STREAM, 0);
-		if(sock_client == -1){
-			perror("socket()");
-			exit(-1);
-		}
-		sockaddr_in sin = { 0 };
-		sin.sin_addr.s_addr = htonl(INADDR_ANY);
-		sin.sin_family = AF_INET;
-		sin.sin_port = htons(PORT_CLIENT);
-		if(bind (sock_client, (sockaddr *) &sin, sizeof sin) == -1){
-			perror("bind()");
-			exit(-1);
-		}
-		if(listen(sock_client, 1) == -1){
-			perror("listen()");
-			exit(-1);
-		}
-		
-		sockaddr_in csin = { 0 };
+void* ecoute(){
 
-		int sinsize = sizeof csin;
-		printf("Recherche d'un adversaire en cours...\n");
-		
-		char buf[100];
-		if((n = recv(serveur, buf, 100, 0)) < 0){
+    //cast
+    //args_traitement *args_t = args;
+    char buffer[TAILLE_MAX_TRAME];
+    
+    while(1){
+
+		if (recv(serveur, buffer, sizeof(buffer), 0) >= 0){
+
+			if(buffer[0] == '*'){
+				printf("%s\n",buffer);
+				//lanceAttaque(serveur);
+			}else if(buffer[0] == '-'){
+				printf("%s\n",buffer);
+				exit(0);
+			}else{
+				printf("Attaque en %s\n",buffer);
+				//lanceAttaque(serveur);
+				/*Trame t = deserializeTrame(buffer);
+				receveTrame(&tb, t);
+				
+				if (tb.finish){
+				    if (tb.data[0]==0){
+				        ResponseGet res = deserializeResponseGet(tb.data);
+				        //pthread_mutex_lock(&mutex_display);
+				        printf("Grille :\n");
+				        printOponentGrid(res.grid);
+				        //pthread_mutex_unlock(&mutex_display);
+				        
+				        lanceAttaque(serveur);
+				        
+				        //printf("\n\nChoisissez des coordonnées d'attaque: ");
+				    }else if(tb.data[0]==1){
+				        ResponseAttack res = deserializeResponseAttack(tb.data);
+				        //pthread_mutex_lock(&mutex_display);
+				        printf("%s a attaqué.\n", inet_ntoa(res.who));
+				        printf("Grille :\n");
+				        printOponentGrid(res.grid);
+				        
+				        if (res.result !=WIN)
+				            lanceAttaque(serveur);
+				        else
+				            printf("Grille terminée.\n\n");
+				        //pthread_mutex_unlock(&mutex_display);
+				    }else if(tb.data[0] == '-'){
+				        printf("%s",tb.data);
+				    }else{
+				        perror("erreur : données incomprises");
+				    }
+				}*/
+			}
+		}else{
 			perror("recv()");
-			exit(-1);
+			continue;
 		}
-		if(buf[0] == '*'){
-			printf("%s\n",buf);
-			partieEnCours = false;
-			exit(0);
-		}
-
-		if((adversaire = accept(sock_client, (sockaddr *)&csin, &sinsize)) == -1){
-			perror("accept()");
-			exit(-1);
-		}else{
-			printf("Adversaire trouvé.\n");
-			partieEnCours = true;
-			close(serveur);
-			
-			printf("Votre grille :\n");
-    		printGrid(grid);
-    		printf("Grille de l'adversaire :\n");
-    		printOponentGrid(opGrid);
-    		printf("Attendez que votre adversaire joue.\n");
-			attente(adversaire);
-		}
-		
-    }else{
-    	//Nouveau socket, client du joueur 1 (serveur)
-		sock_client = socket(AF_INET, SOCK_STREAM, 0);
-		if(sock_client == -1){
-			perror("socket()");
-			exit(-1);
-		}
-		struct hostent *hostinfo = NULL;
-		sockaddr_in sin = {0};
-
-		hostinfo = gethostbyname(adr_adversaire);
-		if (hostinfo == NULL){
-			fprintf (stderr, "Hôte inconnu %s.\n", adr_adversaire);
-			exit(-1);
-		}
-
-		inet_aton(adr_adversaire, &sin.sin_addr);
-		sin.sin_port = htons(PORT_CLIENT);
-		sin.sin_family = AF_INET;
-
-		if(connect(sock_client,(sockaddr *) &sin, sizeof(sockaddr)) == -1){
-			perror("connect()");
-			exit(-1);
-		}else{
-			printf("Connexion au client %s, port : %d\n", inet_ntoa(sin.sin_addr),ntohs(sin.sin_port));
-			partieEnCours = true;
-			adversaire = sock_client;
-			close(serveur);
-			
-			printf("Votre grille :\n");
-    		printGrid(grid);
-			printf("Grille de l'adversaire :\n");
-			printOponentGrid(opGrid);
-
-			lanceAttack(adversaire);
-		}
-   	}*/
+	}
 }
 
 void byebye(void){

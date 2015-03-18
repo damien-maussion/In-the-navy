@@ -6,7 +6,7 @@ CFLAGS = -std=gnu99 -pthread
 
 all:
 	$(CC) $(CFLAGS) grid.c serveurv1.c -o $(SERVEUR)
-	$(CC) $(CFLAGS) clientv1.c -o $(CLIENT)
+	$(CC) $(CFLAGS) grid.c clientv1.c -o $(CLIENT)
 
 clean:
 	rm *.exe

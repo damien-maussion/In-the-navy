@@ -46,12 +46,12 @@ void* lance_listener(void* void_args ){
     }
     
     /* initialisation de la file d'ecoute */
-    listen(socket_descriptor,5);
+    listen(socket_descriptor,10);
     /* attente des connexions et traitement des donnees recues */
     for(;;) {
     
         longueur_adresse_courante = sizeof(adresse_client_courant);
-        
+
         /* adresse_client_courant sera renseigné par accept via les infos du connect */
         if ((nouv_socket_descriptor = 
             accept(socket_descriptor, 
@@ -61,7 +61,7 @@ void* lance_listener(void* void_args ){
             perror("erreur : impossible d'accepter la connexion avec le client.");
             exit(1);
         }
-        
+
         /* traitement du message */
         printf("\nreception d'un message.\n");
         

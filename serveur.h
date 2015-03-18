@@ -9,9 +9,10 @@
 #include <linux/types.h>
 #include <unistd.h> /* close */
 #include <netdb.h> /* gethostbyname */
+#include <pthread.h>
 
 #include "grid.h" 
-#include "annexe.c"
+//#include "annexe.c"
 
 typedef struct sockaddr_in sockaddr_in;
 typedef struct sockaddr sockaddr;
@@ -44,8 +45,9 @@ static void write_client(int sock, const char *buffer);
 //static void send_message_to_all_clients(Client *clients, Client client, int actual, const char *buffer, char from_server);
 void *connection_handler(void *socket_desc);
 static void remove_client(int sock);
+void ajout_client(int sock);
 void clear_clients();
-void BroadCast(char* s);
+void diffusion(char* s);
 void byebye(void);
 void ctrlC_Handler(int e);
 

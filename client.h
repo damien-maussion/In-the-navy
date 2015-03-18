@@ -14,9 +14,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <signal.h>
+#include <pthread.h>
 
 #include "grid.h"
-#include "annexe.c"
+//#include "annexe.c"
 
 typedef struct sockaddr 	sockaddr;
 typedef struct sockaddr_in 	sockaddr_in;
@@ -38,6 +39,7 @@ TrameBuffer tb;
 void lanceAttaque(int sock);
 void attente(int csock);
 void connexionAuServeur();
+void* ecoute();
 void byebye(void);
 void ctrlC_Handler(int e);
 
