@@ -106,7 +106,7 @@ void *connection_handler(void *socket_desc){
 		    
 			ResponseAttack res;
 			res.result = attack(&g, p);
-			getpeername(sock, (struct sockaddr *)&res.who, sizeof(struct sockaddr_in));
+			getpeername(sock, (sockaddr *)&res.who, (socklen_t*) sizeof(sockaddr_in));
 			getOponentGrid(g, res.grid);
 			printGrid(g);
 			
