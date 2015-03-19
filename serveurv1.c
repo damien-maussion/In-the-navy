@@ -68,9 +68,8 @@ void envoiTrame(int sock, char* msg){
         memcpy(t.data, msg+offset, TAILLE_MAX_DATA_TRAME);
         offset+= TAILLE_MAX_DATA_TRAME;
         char *str_trame = serializeTrame(t);
-    	int length_trame = TAILLE_MAX_DATA_TRAME + 3*sizeof(int);
 
-        if((send(sock, str_trame, length_trame, 0)) < 0){
+        if((send(sock, str_trame, TAILLE_MAX_TRAME, 0)) < 0){
         	perror("send()");
         	exit(-1);
         }
@@ -94,6 +93,12 @@ void *connection_handler(void *socket_desc){
     ResponseGet res1;
     strcat(res1.msg,"*\nBienvenue sur le serveur de jeu de In-The-Navy.\n Tentez de couler les bateaux de la grille avant les autres joueurs.\n*\n");
 	getOponentGrid(g, res1.grid);
+	/*printGrid(g);
+	printf("\n\n");
+	printOponentGrid(res1.grid);*/
+	//ResponseGet res2 = deserializeResponseGet(serializeResponseGet(res1));
+	//printOponentGrid(res2.grid);printf("res :: %s\n", res2.msg);
+	//printf("%s\n",serializeResponseGet(res1));
 	envoiTrame(sock, serializeResponseGet(res1));
 		        //diffusion(serializeResponseGet(res));
 	//envoiTrame(sock, message);
@@ -111,10 +116,27 @@ void *connection_handler(void *socket_desc){
 		    
 			ResponseAttack res;
 			res.result = attack(&g, p);
-			getpeername(sock, (sockaddr *)&res.who, (socklen_t*) sizeof(sockaddr_in));
+			printf("%s\n",toString(res.result));
+			
+			/*sockaddr_in addr;
+			getpeername(sock, (sockaddr *)&addr, (socklen_t*) sizeof(sockaddr_in));
+			res.who = addr.sin_addr;*/
+			sockaddr_in addr;
+			socklen_t addr_size = sizeof(sockaddr_in);
+			int res8 = getpeername(sock, (sockaddr *)&addr, &addr_size);
+			res.who = addr.sin_addr;
+			//char clientip[20];
+			//strcpy(clientip, inet_ntoa(addr.sin_addr));
+    
 			getOponentGrid(g, res.grid);
 			printGrid(g);
 			
+			//ResponseAttack res3 = deserializeResponseAttack(serializeResponseAttack(res));
+			//printOponentGrid(res3.grid);printf("res :: %s\n IP :: %s\n", toString(res3.result),inet_ntoa(res.who));
+			/*printf("\n\n");
+			printOponentGrid(res.grid);*/
+
+		
 			//char n[20];
 			//sprintf(n, " par le client %d", sock);
 			//diffusion(n);
@@ -279,7 +301,7 @@ static void write_client(int sock, const char *buffer){
 void diffusion(char* str){
 
 	int offset = 0;
-	int length = strlen(str)+4;
+	int length = strlen(str);
     while (offset < length){
         Trame t;
         t.idTrame = idTrame;

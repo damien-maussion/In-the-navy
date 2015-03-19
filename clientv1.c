@@ -94,7 +94,7 @@ void* ecoute(){
 		if (recv(serveur, buffer, sizeof(buffer), 0) >= 0){
 			Trame t = deserializeTrame(buffer);
 			receveTrame(&tb, t);
-			
+			puts("cc");
 			if (tb.finish){
 			
 				if(tb.data[0] == '-'){				//serveur hors-ligne
@@ -104,6 +104,8 @@ void* ecoute(){
 					printf("Attaque en %s\n",buffer);
 				*/
 				}else if (tb.data[0]== '0'){
+					//printf("%s\n",tb.data);
+					
 				    ResponseGet res = deserializeResponseGet(tb.data);
 				    //pthread_mutex_lock(&mutex_display);
 				    printf("%s",res.msg);

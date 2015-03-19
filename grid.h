@@ -94,7 +94,7 @@ resultAttack attack(Grid *g, PositionLetterDigit p);
 
 #define TAILLE_MAX_DATA_TRAME 256
 #define TAILLE_MAX_TRAME TAILLE_MAX_DATA_TRAME + 3 * sizeof(int)
-#define TAILLE_RESPONSE sizeof(ResponseAttack) + sizeof(int)
+#define TAILLE_RESPONSE 5000
 
 
 struct ResponseGet{
