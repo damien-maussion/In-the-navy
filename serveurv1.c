@@ -159,7 +159,7 @@ void *connection_handler(void *socket_desc){
 		        init(&g);
 		        ResponseGet resWin;
 		        getOponentGrid(g, resWin.grid);
-		        strcat(resWin.msg, "\nGrille finie => Creation et envoi d'une nouvelle grille.\n");
+		        strcat(resWin.msg, "\nPartie terminée ! Tous les bateaux ont été coulé.\nChangement de grille...\n");
 		        printGrid(g);
 		        diffusion(serializeResponseGet(resWin), length);
 		    }
