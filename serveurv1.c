@@ -57,9 +57,10 @@ void ajout_client(int sock){
 	}
 }
 
-void envoiTrame(int sock, char* msg){
+void envoiTrame(int sock, char* msg, int length){
 	int offset = 0;
-	int length = strlen(msg);
+	//int length = strlen(msg);
+	printf("taille :: %d\n",length);
     while (offset < length){
         Trame t;
         t.idTrame = idTrame;
@@ -92,6 +93,7 @@ void *connection_handler(void *socket_desc){
     //printf("%s\n",message);
     ResponseGet res1;
     strcat(res1.msg,"*\nBienvenue sur le serveur de jeu de In-The-Navy.\n Tentez de couler les bateaux de la grille avant les autres joueurs.\n*\n");
+    //printf("res1 :: %d\n",(int)strlen(res1.msg));
 	getOponentGrid(g, res1.grid);
 	/*printGrid(g);
 	printf("\n\n");
@@ -99,7 +101,10 @@ void *connection_handler(void *socket_desc){
 	//ResponseGet res2 = deserializeResponseGet(serializeResponseGet(res1));
 	//printOponentGrid(res2.grid);printf("res :: %s\n", res2.msg);
 	//printf("%s\n",serializeResponseGet(res1));
-	envoiTrame(sock, serializeResponseGet(res1));
+	//char *fg=serializeResponseGet(res1);
+	//printf("%d\n",(int)strlen(fg));
+	int length = sizeof(ResponseGet)+sizeof(char);
+	envoiTrame(sock, serializeResponseGet(res1), length);
 		        //diffusion(serializeResponseGet(res));
 	//envoiTrame(sock, message);
      
@@ -123,7 +128,7 @@ void *connection_handler(void *socket_desc){
 			res.who = addr.sin_addr;*/
 			sockaddr_in addr;
 			socklen_t addr_size = sizeof(sockaddr_in);
-			int res8 = getpeername(sock, (sockaddr *)&addr, &addr_size);
+			int err = getpeername(sock, (sockaddr *)&addr, &addr_size);
 			res.who = addr.sin_addr;
 			//char clientip[20];
 			//strcpy(clientip, inet_ntoa(addr.sin_addr));
@@ -144,16 +149,18 @@ void *connection_handler(void *socket_desc){
 			//strcat(client_message, n);
 			//strcat(client_message, getGrid(g));
 			//strcat(client_message, m);
-			diffusion(serializeResponseAttack(res));
+			length = sizeof(ResponseAttack)+sizeof(char);
+			diffusion(serializeResponseAttack(res), length);
 			memset(client_message, 0, sizeof(client_message));
 
 		    if (res.result == WIN){
+		    	length = sizeof(ResponseGet)+sizeof(char);
 		        init(&g);
 		        ResponseGet resWin;
 		        getOponentGrid(g, resWin.grid);
 		        strcat(resWin.msg, "\nGrille finie => Creation et envoi d'une nouvelle grille.\n");
 		        printGrid(g);
-		        diffusion(serializeResponseGet(resWin));
+		        diffusion(serializeResponseGet(resWin), length);
 		    }
 		}
     }
@@ -298,10 +305,10 @@ static void write_client(int sock, const char *buffer){
 	}*/
 }
 
-void diffusion(char* str){
+void diffusion(char* str, int length){
 
 	int offset = 0;
-	int length = strlen(str);
+	//int length = strlen(str);
     while (offset < length){
         Trame t;
         t.idTrame = idTrame;
@@ -328,7 +335,7 @@ void byebye(void){
 
 	char buffer[100] = "-\nLe serveur est hors-ligne.\n-";
 	printf("%s\n",buffer);
-	diffusion(buffer);
+	diffusion(buffer, 100);
 	clear_clients();
 	end_connection(serveur);
 }

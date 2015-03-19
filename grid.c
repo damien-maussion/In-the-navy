@@ -317,7 +317,7 @@ void receveTrame(TrameBuffer *tbuf, Trame t){
 
 
 char* serializeResponseGet(ResponseGet r){
-	char * str = malloc( sizeof(char)+ TAILLE_MAX_DATA_TRAME*sizeof(char) + sizeof(ResponseGet));
+	char * str = malloc( sizeof(char) + sizeof(ResponseGet));
     
     str[0] = '0';
     int offset = sizeof(char);

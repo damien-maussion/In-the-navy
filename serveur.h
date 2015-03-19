@@ -43,11 +43,12 @@ static void end_connection(int sock);
 static int read_client(int sock, char *buffer);
 static void write_client(int sock, const char *buffer);
 //static void send_message_to_all_clients(Client *clients, Client client, int actual, const char *buffer, char from_server);
+void envoiTrame(int sock, char* msg, int length);
 void *connection_handler(void *socket_desc);
 static void remove_client(int sock);
 void ajout_client(int sock);
 void clear_clients();
-void diffusion(char* s);
+void diffusion(char* s, int length);
 void byebye(void);
 void ctrlC_Handler(int e);
 
