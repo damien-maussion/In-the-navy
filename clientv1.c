@@ -94,7 +94,7 @@ void* ecoute(){
 		if (recv(serveur, buffer, sizeof(buffer), 0) >= 0){
 			Trame t = deserializeTrame(buffer);
 			receveTrame(&tb, t);
-			puts("cc");
+			//puts("cc");
 			if (tb.finish){
 			
 				if(tb.data[0] == '-'){				//serveur hors-ligne
@@ -109,7 +109,7 @@ void* ecoute(){
 				    ResponseGet res = deserializeResponseGet(tb.data);
 				    //pthread_mutex_lock(&mutex_display);
 				    printf("%s",res.msg);
-				    printf("Grille :\n");
+				    printf("Grille du serveur :\n");
 				    printOponentGrid(res.grid);
 				    //pthread_mutex_unlock(&mutex_display);
 				    
@@ -120,8 +120,8 @@ void* ecoute(){
 				}else if(tb.data[0]== '1'){
 				    ResponseAttack res = deserializeResponseAttack(tb.data);
 				    //pthread_mutex_lock(&mutex_display);
-				    printf("%s a attaqué.\nLe résultat est %s.\n", inet_ntoa(res.who), toString(res.result));
-				    printf("Grille :\n");
+				    printf("%s a attaqué en %s.\nLe résultat est : %s.\n", inet_ntoa(res.who), res.pos, toString(res.result));
+				    printf("Grille du serveur :\n");
 				    printOponentGrid(res.grid);
 				    printf("\nChoisissez des coordonnées d'attaque: \n");
 				    

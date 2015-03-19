@@ -107,9 +107,10 @@ char* serializeResponseGet(ResponseGet r);
 ResponseGet deserializeResponseGet(char* str);
 
 struct ResponseAttack{
-	resultAttack result;
+	resultAttack result;			//résultat de l'attaque
 	int grid[GRID_WIDTH][GRID_HEIGHT];
 	in_addr who;					//IP attaquant
+	char pos[4];					//position de l'attaque
 };
 typedef struct ResponseAttack ResponseAttack;
 

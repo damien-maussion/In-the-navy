@@ -6,17 +6,17 @@
 char * toString(resultAttack res){
 	switch (res){
 		case ERROR: 
-			return "wrong position\n";
+			return "mauvaise position";
 		case REPEAT:
-			return "already done\n";
+			return "déjà attaqué";
 		case WATER:
-			return "missed\n";
+			return "manqué";
 		case TOUCH:
-			return "touch\n";
+			return "touché";
 		case SUNK:
-			return "sunk\n";
+			return "coulé";
 		case WIN:
-			return "Win\n";
+			return "gagné";
 	}
 	return "";
 }
@@ -353,6 +353,9 @@ char* serializeResponseAttack(ResponseAttack r){
     offset+= sizeof(resultAttack);
 
     memcpy(str+offset, &(r.who), sizeof(in_addr));
+    offset+= sizeof(in_addr);
+    
+    memcpy(str+offset, &(r.pos), 4*sizeof(char));
 
     return str;
 }
@@ -367,6 +370,9 @@ ResponseAttack deserializeResponseAttack(char *str){
 	offset += sizeof(resultAttack);
 
 	memcpy(&(r.who), str+offset, sizeof(in_addr));
+	offset += sizeof(in_addr);
+	
+	memcpy(&(r.pos), str+offset, 4*sizeof(char));
 
 	return r;
 }

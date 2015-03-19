@@ -60,7 +60,7 @@ void ajout_client(int sock){
 void envoiTrame(int sock, char* msg, int length){
 	int offset = 0;
 	//int length = strlen(msg);
-	printf("taille :: %d\n",length);
+	//printf("taille :: %d\n",length);
     while (offset < length){
         Trame t;
         t.idTrame = idTrame;
@@ -92,7 +92,7 @@ void *connection_handler(void *socket_desc){
     //strcat(message, m);
     //printf("%s\n",message);
     ResponseGet res1;
-    strcat(res1.msg,"*\nBienvenue sur le serveur de jeu de In-The-Navy.\n Tentez de couler les bateaux de la grille avant les autres joueurs.\n*\n");
+    strcat(res1.msg,"\n*\nBienvenue sur le serveur de jeu de In-The-Navy.\n Tentez de couler les bateaux de la grille avant les autres joueurs.\n*\n\n");
     //printf("res1 :: %d\n",(int)strlen(res1.msg));
 	getOponentGrid(g, res1.grid);
 	/*printGrid(g);
@@ -109,7 +109,7 @@ void *connection_handler(void *socket_desc){
 	//envoiTrame(sock, message);
      
     //Receive a message from client
-    while((read_size = recv(sock , client_message , 2000 , 0)) > 0){
+    while((read_size = recv(sock , client_message, 2000 , 0)) > 0){
         if(client_message[0] == '1'){
 			//printf("reception attaque + diff\n");
 			PositionLetterDigit p;
@@ -121,7 +121,8 @@ void *connection_handler(void *socket_desc){
 		    
 			ResponseAttack res;
 			res.result = attack(&g, p);
-			printf("%s\n",toString(res.result));
+			memcpy(&res.pos, client_message+sizeof(char), 3*sizeof(char));
+			//printf("%s\n",toString(res.result));
 			
 			/*sockaddr_in addr;
 			getpeername(sock, (sockaddr *)&addr, (socklen_t*) sizeof(sockaddr_in));
