@@ -106,17 +106,18 @@ void *connection_handler(void *socket_desc){
 		    
 			ResponseAttack res;
 			res.result = attack(&g, p);
+			getpeername(sock, (struct sockaddr *)&res.who, sizeof(struct sockaddr_in));
 			getOponentGrid(g, res.grid);
 			printGrid(g);
 			
-			char n[20];
-			sprintf(n, " par le client %d", sock);
+			//char n[20];
+			//sprintf(n, " par le client %d", sock);
 			//diffusion(n);
-			printf("%s\n",serializeResponseAttack(res));
-			strcat(client_message, n);
-			strcat(client_message, getGrid(g));
-			strcat(client_message, m);
-			diffusion(client_message);
+			//printf("%s\n",serializeResponseAttack(res));
+			//strcat(client_message, n);
+			//strcat(client_message, getGrid(g));
+			//strcat(client_message, m);
+			diffusion(serializeResponseAttack(res));
 			memset(client_message, 0, sizeof(client_message));
 
 		    if (res.result == WIN){
