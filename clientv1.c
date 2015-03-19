@@ -92,43 +92,46 @@ void* ecoute(){
     while(1){
 
 		if (recv(serveur, buffer, sizeof(buffer), 0) >= 0){
-
-			if(buffer[0] == '-'){				//serveur hors-ligne
-				printf("%s\n",buffer);
-				exit(0);
-			}else if(buffer[0] == '1'){			//attaque
-				printf("Attaque en %s\n",buffer);
-				Trame t = deserializeTrame(buffer);
-				receveTrame(&tb, t);
-				
-				if (tb.finish){
-				    if (tb.data[0]==0){
-				        ResponseGet res = deserializeResponseGet(tb.data);
-				        //pthread_mutex_lock(&mutex_display);
-				        printf("Grille :\n");
-				        printOponentGrid(res.grid);
-				        //pthread_mutex_unlock(&mutex_display);
-				        
-				        //lanceAttaque(serveur);
-				        
-				        //printf("\n\nChoisissez des coordonnées d'attaque: ");
-				    }else if(tb.data[0]==1){
-				        ResponseAttack res = deserializeResponseAttack(tb.data);
-				        //pthread_mutex_lock(&mutex_display);
-				        printf("%s a attaqué.\nLe résultat est %s.\n", inet_ntoa(res.who), toString(res.result));
-				        printf("Grille :\n");
-				        printOponentGrid(res.grid);
-				        
-				        if (res.result !=WIN)
-				            lanceAttaque(serveur);
-				        else
-				            printf("Grille terminée.\n\n");
-				        //pthread_mutex_unlock(&mutex_display);
-				    }
+			Trame t = deserializeTrame(buffer);
+			receveTrame(&tb, t);
+			
+			if (tb.finish){
+			
+				if(tb.data[0] == '-'){				//serveur hors-ligne
+					printf("%s\n",buffer);
+					exit(0);
+				/*}else if(buffer[0] == '1'){			//attaque
+					printf("Attaque en %s\n",buffer);
+				*/
+				}else if (tb.data[0]== '0'){
+				    ResponseGet res = deserializeResponseGet(tb.data);
+				    //pthread_mutex_lock(&mutex_display);
+				    printf("%s",res.msg);
+				    printf("Grille :\n");
+				    printOponentGrid(res.grid);
+				    //pthread_mutex_unlock(&mutex_display);
+				    
+				    //lanceAttaque(serveur);
+				    
+				    //printf("\n\nChoisissez des coordonnées d'attaque: ");
+				    printf("\nChoisissez des coordonnées d'attaque: \n");
+				}else if(tb.data[0]== '1'){
+				    ResponseAttack res = deserializeResponseAttack(tb.data);
+				    //pthread_mutex_lock(&mutex_display);
+				    printf("%s a attaqué.\nLe résultat est %s.\n", inet_ntoa(res.who), toString(res.result));
+				    printf("Grille :\n");
+				    printOponentGrid(res.grid);
+				    printf("\nChoisissez des coordonnées d'attaque: \n");
+				    
+				    /*if (res.result !=WIN)
+				        lanceAttaque(serveur);
+				    else
+				        printf("Grille terminée.\n\n");*/
+				    //pthread_mutex_unlock(&mutex_display);
+				}else{
+					printf("%s",buffer);
 				}
-			}else{
-				printf("%s",buffer);
-			} 
+			}
 		}else{
 			perror("recv()");
 			continue;

@@ -98,6 +98,7 @@ resultAttack attack(Grid *g, PositionLetterDigit p);
 
 
 struct ResponseGet{
+	char msg[TAILLE_MAX_DATA_TRAME];
 	int grid[GRID_WIDTH][GRID_HEIGHT];
 };
 typedef struct ResponseGet ResponseGet;

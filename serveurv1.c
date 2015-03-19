@@ -86,12 +86,17 @@ void *connection_handler(void *socket_desc){
 	char *m = "\nChoisissez des coordonnées d'attaque: \n";
     
     //Message d'arrivée sur le serveur
-    char *bienvenue = "*\nBienvenue sur le serveur de jeu de In-The-Navy.\n Tentez de couler les bateaux de la grille avant les autres joueurs.\n*\n";
-    strcat(message, bienvenue);
-    strcat(message, getGrid(g));
-    strcat(message, m);
+    //char *bienvenue = "*\nBienvenue sur le serveur de jeu de In-The-Navy.\n Tentez de couler les bateaux de la grille avant les autres joueurs.\n*\n";
+    //strcat(message, bienvenue);
+    //strcat(message, getGrid(g));
+    //strcat(message, m);
     //printf("%s\n",message);
-	envoiTrame(sock, message);
+    ResponseGet res1;
+    strcat(res1.msg,"*\nBienvenue sur le serveur de jeu de In-The-Navy.\n Tentez de couler les bateaux de la grille avant les autres joueurs.\n*\n");
+	getOponentGrid(g, res1.grid);
+	envoiTrame(sock, serializeResponseGet(res1));
+		        //diffusion(serializeResponseGet(res));
+	//envoiTrame(sock, message);
      
     //Receive a message from client
     while((read_size = recv(sock , client_message , 2000 , 0)) > 0){
@@ -122,11 +127,11 @@ void *connection_handler(void *socket_desc){
 
 		    if (res.result == WIN){
 		        init(&g);
-		        ResponseGet res;
-		        getOponentGrid(g, res.grid);
-		        printf("\nGrille finie => Creation et envoi d'une nouvelle grille.\n");
+		        ResponseGet resWin;
+		        getOponentGrid(g, resWin.grid);
+		        strcat(resWin.msg, "\nGrille finie => Creation et envoi d'une nouvelle grille.\n");
 		        printGrid(g);
-		        diffusion(serializeResponseGet(res));
+		        diffusion(serializeResponseGet(resWin));
 		    }
 		}
     }

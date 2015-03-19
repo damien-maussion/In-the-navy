@@ -319,21 +319,31 @@ void receveTrame(TrameBuffer *tbuf, Trame t){
 char* serializeResponseGet(ResponseGet r){
 	char * str = malloc( sizeof(char) + sizeof(ResponseGet));
     
-    str[0] = 0;
-    memcpy(str+sizeof(char), r.grid, sizeof(int[GRID_WIDTH][GRID_HEIGHT]));
+    str[0] = '0';
+    int offset = sizeof(char);
+    
+    memcpy(str+offset, r.msg, TAILLE_MAX_DATA_TRAME*sizeof(char));
+    offset+=TAILLE_MAX_DATA_TRAME*sizeof(char);
+    
+    memcpy(str+offset, r.grid, sizeof(int[GRID_WIDTH][GRID_HEIGHT]));
 
     return str;
 }
 ResponseGet deserializeResponseGet(char* str){
 	ResponseGet res;
-	memcpy(res.grid, str+sizeof(char), sizeof(int[GRID_WIDTH][GRID_HEIGHT]));
+	int offset = sizeof(char);
+	
+	memcpy(res.msg, str+offset, TAILLE_MAX_DATA_TRAME*sizeof(char));
+	offset+=TAILLE_MAX_DATA_TRAME*sizeof(char);
+	
+	memcpy(res.grid, str+offset, sizeof(int[GRID_WIDTH][GRID_HEIGHT]));
 	return res;
 }
 
 char* serializeResponseAttack(ResponseAttack r){
 	char * str = malloc( sizeof(char) + sizeof(ResponseAttack));
     
-    str[0] = 1;
+    str[0] = '1';
     int offset = sizeof(char);
 
     memcpy(str+offset, r.grid, sizeof(int[GRID_WIDTH][GRID_HEIGHT]));
