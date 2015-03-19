@@ -93,16 +93,12 @@ void* ecoute(){
 
 		if (recv(serveur, buffer, sizeof(buffer), 0) >= 0){
 
-			if(buffer[0] == '*'){
-				printf("%s\n",buffer);
-				//lanceAttaque(serveur);
-			}else if(buffer[0] == '-'){
+			if(buffer[0] == '-'){
 				printf("%s\n",buffer);
 				exit(0);
-			}else{
+			}else if(buffer[0] == '1'){
 				printf("Attaque en %s\n",buffer);
-				//lanceAttaque(serveur);
-				/*Trame t = deserializeTrame(buffer);
+				Trame t = deserializeTrame(buffer);
 				receveTrame(&tb, t);
 				
 				if (tb.finish){
@@ -113,7 +109,7 @@ void* ecoute(){
 				        printOponentGrid(res.grid);
 				        //pthread_mutex_unlock(&mutex_display);
 				        
-				        lanceAttaque(serveur);
+				        //lanceAttaque(serveur);
 				        
 				        //printf("\n\nChoisissez des coordonnées d'attaque: ");
 				    }else if(tb.data[0]==1){
@@ -128,13 +124,11 @@ void* ecoute(){
 				        else
 				            printf("Grille terminée.\n\n");
 				        //pthread_mutex_unlock(&mutex_display);
-				    }else if(tb.data[0] == '-'){
-				        printf("%s",tb.data);
-				    }else{
-				        perror("erreur : données incomprises");
 				    }
-				}*/
-			}
+				}
+			}else{
+				printf("%s",buffer);
+			} 
 		}else{
 			perror("recv()");
 			continue;

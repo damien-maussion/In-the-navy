@@ -32,7 +32,7 @@ static int app(void){
          
         //Now join the thread , so that we dont terminate before the thread
         //pthread_join( sniffer_thread , NULL);
-        printf("Handler assigned\n");
+        //printf("Handler assigned\n");
     }
      
     if (nouv_client<0){
@@ -48,21 +48,13 @@ void ajout_client(int sock){
 		
 	if(clients == NULL){
 		clients = nouveau;
-		//puts("la");
 	}else{
 		Liste_clients *tmp = clients;
 		while(tmp->next != NULL){
 			tmp = tmp->next;
 		}		
 		tmp->next = nouveau;
-		//puts("ici");
 	}
-	/*Liste_clients *tmp = clients;
-	while(tmp != NULL){
-		printf("envoi au client %d\n",tmp->socket);
-		send(tmp->socket, "cc", 2, 0);
-		tmp = tmp->next;
-	}*/
 }
 
 void envoiTrame(int sock, char* msg){
@@ -77,8 +69,7 @@ void envoiTrame(int sock, char* msg){
         offset+= TAILLE_MAX_DATA_TRAME;
         char *str_trame = serializeTrame(t);
     	int length_trame = TAILLE_MAX_DATA_TRAME + 3*sizeof(int);
-        //write(sd,serializeTrame(t),TAILLE_MAX_DATA_TRAME + 3*sizeof(int));
-        //sendTrameTo(t, add);
+
         if((send(sock, str_trame, length_trame, 0)) < 0){
         	perror("send()");
         	exit(-1);
@@ -92,22 +83,50 @@ void *connection_handler(void *socket_desc){
 	int sock = *(int*)socket_desc;
 	int read_size;
 	char message[2000], client_message[2000];
-	char *m = "\nChoisissez des coordonnées d'attaque: ";
+	char *m = "\nChoisissez des coordonnées d'attaque: \n";
     
     //Message d'arrivée sur le serveur
     char *bienvenue = "*\nBienvenue sur le serveur de jeu de In-The-Navy.\n Tentez de couler les bateaux de la grille avant les autres joueurs.\n*\n";
-    strcat(message, bienvenue);strcat(message, m);
+    strcat(message, bienvenue);
+    strcat(message, getGrid(g));
+    strcat(message, m);
+    //printf("%s\n",message);
 	envoiTrame(sock, message);
      
     //Receive a message from client
     while((read_size = recv(sock , client_message , 2000 , 0)) > 0){
         if(client_message[0] == '1'){
 			//printf("reception attaque + diff\n");
+			PositionLetterDigit p;
+		    p.letter = client_message[1];
+		    char subbuff[3];
+		    memcpy( subbuff, &client_message[2], 2 );
+		    subbuff[2] = '\0';
+		    p.y = atoi(subbuff);
+		    
+			ResponseAttack res;
+			res.result = attack(&g, p);
+			getOponentGrid(g, res.grid);
+			printGrid(g);
+			
 			char n[20];
 			sprintf(n, " par le client %d", sock);
+			//diffusion(n);
+			printf("%s\n",serializeResponseAttack(res));
 			strcat(client_message, n);
+			strcat(client_message, getGrid(g));
 			strcat(client_message, m);
 			diffusion(client_message);
+			memset(client_message, 0, sizeof(client_message));
+
+		    if (res.result == WIN){
+		        init(&g);
+		        ResponseGet res;
+		        getOponentGrid(g, res.grid);
+		        printf("\nGrille finie => Creation et envoi d'une nouvelle grille.\n");
+		        printGrid(g);
+		        diffusion(serializeResponseGet(res));
+		    }
 		}
     }
      
@@ -254,7 +273,7 @@ static void write_client(int sock, const char *buffer){
 void diffusion(char* str){
 
 	int offset = 0;
-	int length = strlen(str);
+	int length = strlen(str)+4;
     while (offset < length){
         Trame t;
         t.idTrame = idTrame;
