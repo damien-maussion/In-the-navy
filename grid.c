@@ -301,10 +301,8 @@ Trame deserializeTrame(char * str){
 }
 
 void receveTrame(TrameBuffer *tbuf, Trame t){
-	//printf("trame %d-%d\n", t.idTrame, t.index);
 	
 	if (tbuf->idTrame < t.idTrame) {
-		//printf("taille : %d\n", t.taille);
 		tbuf->idTrame = t.idTrame;
 		tbuf->nbTrameReceved = 0;
 		tbuf->finish = false;

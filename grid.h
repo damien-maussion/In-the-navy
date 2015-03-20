@@ -24,9 +24,12 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 
+#define TAILLE_MAX_DATA_TRAME 256
+#define TAILLE_MAX_TRAME TAILLE_MAX_DATA_TRAME + 3 * sizeof(int)
+#define TAILLE_RESPONSE 5000
+
 typedef struct in_addr in_addr;
 
-// enum resultAttack
 enum resultAttack {ERROR, REPEAT, WATER, TOUCH, SUNK, WIN};
 typedef enum resultAttack resultAttack;
 
@@ -75,13 +78,8 @@ int getGridStringLength();
 char* getGrid(Grid g);
 void printGrid(Grid g);
 
-//char* getOponentGrid(Grid g);
-//void printOponentGrid(Grid g);
-
 void getOponentGrid(Grid g, int tab[GRID_WIDTH][GRID_HEIGHT]);
 void printOponentGrid(int tab[GRID_WIDTH][GRID_HEIGHT]);
-
-
 
 bool isValidPosition(Position p);
 
@@ -91,20 +89,11 @@ bool isLast(Grid g, Position p);
 resultAttack attackPos(Grid *g, Position p);
 resultAttack attack(Grid *g, PositionLetterDigit p);
 
-
-#define TAILLE_MAX_DATA_TRAME 256
-#define TAILLE_MAX_TRAME TAILLE_MAX_DATA_TRAME + 3 * sizeof(int)
-#define TAILLE_RESPONSE 5000
-
-
 struct ResponseGet{
 	char msg[TAILLE_MAX_DATA_TRAME];
 	int grid[GRID_WIDTH][GRID_HEIGHT];
 };
 typedef struct ResponseGet ResponseGet;
-
-char* serializeResponseGet(ResponseGet r);
-ResponseGet deserializeResponseGet(char* str);
 
 struct ResponseAttack{
 	resultAttack result;			//résultat de l'attaque
@@ -114,10 +103,6 @@ struct ResponseAttack{
 };
 typedef struct ResponseAttack ResponseAttack;
 
-char* serializeResponseAttack(ResponseAttack r);
-ResponseAttack deserializeResponseAttack(char *str);
-
-
 struct Trame{
     char data[TAILLE_MAX_DATA_TRAME];
     int idTrame;
@@ -125,9 +110,6 @@ struct Trame{
     int taille;
 };
 typedef struct Trame Trame;
-
-char* serializeTrame(Trame t);
-Trame deserializeTrame(char * str);
 
 struct TrameBuffer{
 	char data[2*TAILLE_RESPONSE];
@@ -137,4 +119,10 @@ struct TrameBuffer{
 };
 typedef struct TrameBuffer TrameBuffer;
 
+char* serializeResponseGet(ResponseGet r);
+ResponseGet deserializeResponseGet(char* str);
+char* serializeResponseAttack(ResponseAttack r);
+ResponseAttack deserializeResponseAttack(char *str);
+char* serializeTrame(Trame t);
+Trame deserializeTrame(char * str);
 void receveTrame(TrameBuffer *tbuf, Trame t);

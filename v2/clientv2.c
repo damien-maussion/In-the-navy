@@ -1,7 +1,11 @@
-/*-----------------------------------------------------------
-Client a lancer apres le serveur avec la commande :
-./client.exe <adresse-serveur>
-------------------------------------------------------------*/
+/**
+* \file client.c
+* \brief Fichier d'implementation de la classe client
+* \date 13/03/2015
+* Commande :
+* ./client.exe <adresse-serveur>
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -10,8 +14,10 @@ Client a lancer apres le serveur avec la commande :
 
 #include "client.h"
 
+/**
+* \brief Reinitialise la representation de la grille de l'adversaire
+*/
 void reinitOponentGrid(){
-	//réinitialisation de la grille
 	for (int i=0; i<GRID_WIDTH;i++){
 		for (int j=0; j<GRID_HEIGHT;j++){
 			opGrid[i][j]=0;
@@ -19,8 +25,12 @@ void reinitOponentGrid(){
 	}
 }
 
+/**
+* \brief Mise-a-jour de la representation de la grille adverse apres attaque
+* \param[in] p Position de l'attaque
+* \param[in] res Resultat de l'attaque (touche, coule...)
+*/
 void updateOpGrid(PositionLetterDigit p, resultAttack res){
-	//mise-à-jour de la grille adverse après attaque
 	Position pos= toPosition(p);
 	if (res == WATER)
 		opGrid[pos.x][pos.y]=-1;
@@ -28,6 +38,10 @@ void updateOpGrid(PositionLetterDigit p, resultAttack res){
 		opGrid[pos.x][pos.y]=-2;
 }
 
+/**
+* \brief Demande une position d'attaque au client et l'envoie a l'adversaire
+* \param[in] sock Le socket auquel on envoie le message d'attaque (ici le client adverse)
+*/
 void lanceAttaque(int sock){
 	char pos[3];
 	char buffer[4] = "1";
@@ -37,31 +51,35 @@ void lanceAttaque(int sock){
 	
 	strcat(buffer, pos);
 
-	//envoi des coordonnées d'attaque à l'adversaire
+	//Envoi des coordonnées d'attaque à l'adversaire
 	if(send(sock, buffer, strlen(buffer), 0) < 0){
 		perror("send()");
 		exit(-1);
 	}
 	
-	//en attente d'une réponse
+	//En attente d'une réponse
 	if(partieEnCours)
 		attente(sock);
 	else
 		printf("err: partie terminée\n");
 }
 
+/**
+* \brief Methode pour la phase d'attente de reponse de l'adversaire
+* \param[in] csock Le socket duquel on recoit les messages
+*/
 void attente(int csock){
 	char buffer[100];
 	char buf[100] = "0";
 	int n = 0;
 
-	//réception d'un message de l'adversaire
+	//Reception d'un message de l'adversaire
 	if((n = recv(csock, buffer, sizeof(buffer), 0)) < 0){
 		perror("recv()");
 		exit(-1);
 	}
 
-	if(buffer[0] == '-'){				//déconnexion
+	if(buffer[0] == '-'){				//code pour deconnexion de l'adversaire
 		printf("%s\n",buffer);
 		printf("Déconnexion de votre adversaire. Reconnexion avec le serveur de jeu en cours...\n");
 		partieEnCours = false;
@@ -69,9 +87,9 @@ void attente(int csock){
 		adversaire = -1;
 		//reconnexion au serveur
 		connexionAuServeur();
-	}else if (buffer[0]== '0'){			//réception d'un resultat
+	}else if (buffer[0]== '0'){			//code pour reception d'un resultat
 
-		//Traitement du résultat
+		//Traitement du resultat
     	resultAttack resA;
     	memcpy(&resA, buffer+sizeof(char), sizeof(resultAttack));
     	
@@ -88,7 +106,7 @@ void attente(int csock){
 
     	if (resA != REPEAT && resA!= ERROR){
 			
-			//Résultat valide; prise en compte du résultat
+			//Resultat valide; prise en compte du resultat
     		updateOpGrid(p, resA);
 		
     		printf("Grille de l'adversaire :\n");
@@ -107,12 +125,12 @@ void attente(int csock){
 			printf("Attentez que votre adversaire joue.\n");
 			attente(csock);
 		}else{
-			//Résultat invalide, rejouer
+			//Resultat invalide, rejouer
 			printf("Attaque incorrecte, reessayez.\n");
 			lanceAttaque(csock);	
 		}
     	
-    }else if(buffer[0] == '1'){			//réception d'une attaque
+    }else if(buffer[0] == '1'){			//code pour reception d'une attaque
 	    
 	    //Traitement de l'attaque
 		PositionLetterDigit p;
@@ -130,7 +148,7 @@ void attente(int csock){
 		memcpy(res+sizeof(char), &resA, sizeof(resultAttack));
 		memcpy(res+sizeof(char)+sizeof(resultAttack), buffer+sizeof(char), 3*sizeof(char));
         
-        //Envoi du résultat de l'attaque à l'attaquant
+        //Envoi du resultat de l'attaque a l'attaquant
         if(send(csock, res, 10, 0) < 0){
 			perror("send()");
 			exit(-1);
@@ -158,6 +176,9 @@ void attente(int csock){
 	}
 }
 
+/**
+* \brief Methode de connexion au serveur choisi par le client
+*/
 void connexionAuServeur(){
 
 	if(sock_client != -1){
@@ -183,6 +204,7 @@ void connexionAuServeur(){
 		exit(-1);
 	}
     
+    //Initialisation de la grille du client et de son adversaire
     srand(time(NULL));
     init(&grid);
     reinitOponentGrid();
@@ -196,7 +218,7 @@ void connexionAuServeur(){
 		exit(-1);
 	}
 
-    if (strcmp(adr_adversaire, "fake")==0){
+    if (strcmp(adr_adversaire, "fake")==0){				//code pour premier client, ce dernier doit attendre un adversaire
     	/*Client devient serveur*/
     	sock_client = socket(AF_INET, SOCK_STREAM, 0);
 		if(sock_client == -1){
@@ -248,7 +270,7 @@ void connexionAuServeur(){
 			attente(adversaire);
 		}
 		
-    }else{
+    }else{														//deuxieme client, va etre mis en relation avec le premier
     	//Nouveau socket, client du joueur 1 (serveur)
 		sock_client = socket(AF_INET, SOCK_STREAM, 0);
 		if(sock_client == -1){
@@ -282,34 +304,51 @@ void connexionAuServeur(){
 			printf("Grille de l'adversaire :\n");
 			printOponentGrid(opGrid);
 
+			//Debut du jeu
 			lanceAttaque(adversaire);
 		}
    	}
 }
 
+/**
+* \brief Methode appelee lorsque le programme client se termine
+*/
 void byebye(void){
 	printf("\nVous êtes désormais déconnecté(e).\n");
 	if(partieEnCours){
 		partieEnCours = false;
+		//Envoi d'un message a notre adversaire pour prevenir que nous partons
 		if(send(adversaire, "-Votre adversaire a quitté la partie.\n", 50, 0) < 0){
 			perror("send()");
 			exit(-1);
 		}
 	}else if(!partieEnCours){
+		//Envoi d'un message au serveur pour prevenir que nous partons
 		if(send(serveur, "-", 2, 0) < 0){
 			perror("send()");
 			exit(-1);
 		}
 	}
+	//Destructions
 	close(serveur);
 	close(adversaire);
 	close(sock_client);
 }
 
+/**
+* \brief Redirection d'une fermeture de programme par la commande "Ctrl+c" vers la methode "byebye"
+* \param[in] e
+*/
 void ctrlC_Handler(int e){
     exit(0);
 }
 
+/**
+* \brief Main, creation de la connexion vers le serveur
+* \param[in] argc
+* \param[in] *argv adresse du serveur
+* \return exit(0)
+*/
 int main(int argc, char **argv){
   
     hostent * hostinfo; 		/* info sur une machine hote */
@@ -343,5 +382,5 @@ int main(int argc, char **argv){
     
   	connexionAuServeur();
 	
-    exit(0);
+    return 0;
 }

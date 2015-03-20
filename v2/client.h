@@ -1,6 +1,12 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
+/**
+* \file client.h
+* \brief Fichier de declaration de la classe client
+* \date 13/03/2015
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -16,7 +22,7 @@
 #include <signal.h>
 
 #include "../grid.h"
-#include "../annexe.c"
+//#include "../annexe.c"
 
 typedef struct sockaddr 	sockaddr;
 typedef struct sockaddr_in 	sockaddr_in;

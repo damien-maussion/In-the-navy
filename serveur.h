@@ -1,6 +1,12 @@
 #ifndef SERVEUR_H
 #define SERVEUR_H
 
+/**
+* \file serveur.h
+* \brief Fichier de declaration de la classe serveur
+* \date 13/03/2015
+*/
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -11,8 +17,7 @@
 #include <netdb.h> /* gethostbyname */
 #include <pthread.h>
 
-#include "grid.h" 
-//#include "annexe.c"
+#include "grid.h"
 
 typedef struct sockaddr_in sockaddr_in;
 typedef struct sockaddr sockaddr;
@@ -37,17 +42,12 @@ Liste_clients *clients = NULL;
 int serveur;
 int idTrame = 0;
 
-static int app(void);
-static int init_connection(void);
-static void end_connection(int sock);
-static int read_client(int sock, char *buffer);
-static void write_client(int sock, const char *buffer);
-//static void send_message_to_all_clients(Client *clients, Client client, int actual, const char *buffer, char from_server);
-void envoiTrame(int sock, char* msg, int length);
-void *connection_handler(void *socket_desc);
-static void remove_client(int sock);
+int init_connexion(void);
+void *prise_en_charge_client(void *socket_desc);
+void envoi_trame(int sock, char* msg, int length);
 void ajout_client(int sock);
-void clear_clients();
+void suppr_client(int sock);
+void vide_clients();
 void diffusion(char* s, int length);
 void byebye(void);
 void ctrlC_Handler(int e);
