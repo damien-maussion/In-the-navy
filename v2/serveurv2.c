@@ -128,10 +128,10 @@ int main(int argc, char **argv){
 
 		sockaddr_in csin = { 0 };
 		int sinsize = sizeof(csin);
-		if(client != -1){
+		/*if(client != -1){
 			//Reception d'un ping ou message du client dans le cas où il se déconnecte
 			lire_client(client);
-		}
+		}*/
 		int tmp;
 		if((tmp = accept(sock, (sockaddr *)&csin, &sinsize)) == -1){
             perror("erreur : impossible d'accepter la connexion avec le client.");
