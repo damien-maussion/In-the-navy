@@ -26,7 +26,7 @@ typedef struct servent 		servent;
 #define MAX_CLIENTS 10
 
 in_addr adr_client;
-int client = -1;
+int socket_premier_client = -1;
 bool isInGame = false;
 
 int init_connexion(void);

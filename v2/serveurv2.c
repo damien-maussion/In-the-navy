@@ -61,8 +61,8 @@ int lire_client(int sock){
 		n = 0;
 	}
 	if(buffer[0] == '-'){		//code pour deconnexion du client
-		close(client);
-		client = -1;
+		close(socket_premier_client);
+		socket_premier_client = -1;
 		printf("Client déconnecté.\n");
 		isInGame=false;
 	}
@@ -93,13 +93,13 @@ void byebye(void){
 
 	char buffer[100] = "*\nLe serveur est hors-ligne.";
 	printf("%s\n",buffer);
-	if(client != -1){
+	if(socket_premier_client != -1){
 		//Envoi d'un message au client pour prévenir que le serveur est hors-ligne
-		if(send(client, buffer, 100, 0) < 0){
+		if(send(socket_premier_client, buffer, 100, 0) < 0){
 			perror("send()");
 			exit(-1);
 		}
-		close(client);
+		close(socket_premier_client);
 	}
 }
 
@@ -128,10 +128,7 @@ int main(int argc, char **argv){
 
 		sockaddr_in csin = { 0 };
 		int sinsize = sizeof(csin);
-		/*if(client != -1){
-			//Reception d'un ping ou message du client dans le cas où il se déconnecte
-			lire_client(client);
-		}*/
+
 		int tmp;
 		if((tmp = accept(sock, (sockaddr *)&csin, &sinsize)) == -1){
             perror("erreur : impossible d'accepter la connexion avec le client.");
@@ -150,16 +147,16 @@ int main(int argc, char **argv){
 					exit(-1);
 				}
 			}else{
-				//Envoi d'un ping au client
-				ecrire_client(client);
+				ecrire_client(socket_premier_client);
 				//Envoi de l'adresse d'un client à celui enregistré pour qu'ils communiquent
 				if(send(tmp, inet_ntoa(adr_client), 50, 0) < 0){
 					perror("send()");
 					exit(-1);
 				}
+				printf("Binôme formé.\nEn attente de nouveaux clients...\n");
 				isInGame=false;
 			}
-			client = tmp;
+			socket_premier_client = tmp;
 		}
 	}
 	close(sock);
