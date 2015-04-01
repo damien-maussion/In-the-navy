@@ -22,7 +22,6 @@
 #include <signal.h>
 
 #include "../grid.h"
-//#include "../annexe.c"
 
 typedef struct sockaddr 	sockaddr;
 typedef struct sockaddr_in 	sockaddr_in;

@@ -198,12 +198,6 @@ void connexionAuServeur(){
 		exit(1);
     }
     
-    //Envoi d'un ping au serveur
-    /*if(send(serveur, "ping", 2, 0) < 0){
-		perror("send()");
-		exit(-1);
-	}*/
-    
     //Initialisation de la grille du client et de son adversaire
     srand(time(NULL));
     init(&grid);
