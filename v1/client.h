@@ -20,7 +20,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <signal.h>
-#include <pthread.h>
 
 #include "grid.h"
 
@@ -32,17 +31,24 @@ typedef struct servent 		servent;
 #define TAILLE_MAX_NOM 256
 #define PORT_CLIENT 5001
 
-sockaddr_in adresse_locale; /* adresse de socket local */
+sockaddr_in adresse_locale_globale; /* adresse de socket local */
 
+Grid grid;
+int opGrid[GRID_WIDTH][GRID_HEIGHT];
 bool partieEnCours = false;
+char adr_adversaire[50];
+int adversaire = -1;
 int serveur = -1;
 int sock_client = -1;
 TrameBuffer tb;
 
+void reinitOponentGrid();
+void updateOpGrid(PositionLetterDigit p, resultAttack res);
 void lanceAttaque(int sock);
+void attente(int csock);
 void connexionAuServeur();
-void* ecoute();
 void byebye(void);
 void ctrlC_Handler(int e);
 
 #endif
+

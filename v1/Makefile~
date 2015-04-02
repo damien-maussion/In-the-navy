@@ -5,8 +5,8 @@ CC = gcc
 CFLAGS = -std=gnu99 -pthread
 
 all:
-	$(CC) $(CFLAGS) grid.c serveur.c -o $(SERVEUR)
-	$(CC) $(CFLAGS) grid.c client.c -o $(CLIENT)
+	$(CC) $(CFLAGS) ../grid.c serveurv2.c -o $(SERVEUR)
+	$(CC) $(CFLAGS) ../grid.c clientv2.c -o $(CLIENT)
 
 clean:
 	rm *.exe

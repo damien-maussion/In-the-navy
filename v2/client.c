@@ -1,198 +1,170 @@
-/*-----------------------------------------------------------
-Client a lancer apres le serveur avec la commande :
-client <adresse-serveur> <message-a-transmettre>
-------------------------------------------------------------*/
+/**
+* \file client.c
+* \brief Fichier d'implementation de la classe client
+* \date 13/03/2015
+* Commande :
+* ./client.exe <adresse-serveur>
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <linux/types.h>
-#include <sys/socket.h>
-#include <sys/select.h>
-#include <netdb.h>
-#include <strings.h>
 #include <string.h>
-#include <pthread.h>
 #include <stdbool.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <signal.h>
 
-#include <errno.h>
+#include "client.h"
 
-#include "../grid.h"
-#include "../annexe.c"
-
-#define TAILLE_MAX_NOM 256
-#define PORT_CLIENT 5001
-
-typedef struct sockaddr 	sockaddr;
-typedef struct sockaddr_in 	sockaddr_in;
-typedef struct hostent 		hostent;
-typedef struct servent 		servent;
-
-sockaddr_in adresse_locale_globale; /* adresse de socket local */
-
-Grid grid;
-int opGrid[GRID_WIDTH][GRID_HEIGHT];
-
-void reinitOponentGrid(){
-	for (int i=0; i<GRID_WIDTH;i++){
-		for (int j=0; j<GRID_HEIGHT;j++){
-			opGrid[i][j]=0;
-		}
-	}
-}
-
-void* prise_en_charge(int soc);
-
-void lanceAttack(int soc){
+/**
+* \brief Demande une position d'attaque au client et l'envoie au serveur
+* \param[in] sock Le socket auquel on envoie le message d'attaque (ici le serveur)
+*/
+void lanceAttaque(int sock){
 	char pos[3];
-	char buf[4] = "1";
+	
+	//on insere un caractere de reconnaissance de type de message, "1" signifie "attaque" pour le serveur
+	char buffer[4] = "1";
 
-	printf ("Choisissez des coordonnées d'attaque: ");
+	//en attente de saisie par l'utilisateur client
 	scanf ("%3s",pos);  
 	
-	strcat(buf, pos);
-	
-	if ((write(soc, buf, 4)) < 0) {
-		perror("erreur : impossible d'ecrire le message destine à l'autre joueur.");
-		exit(1);
+	strcat(buffer, pos);
+
+	//envoi des coordonnées d'attaque au serveur
+	if(send(sock, buffer, strlen(buffer), 0) < 0){
+		perror("send()");
+		exit(-1);
 	}
-	
-	prise_en_charge(soc);
-	
 }
 
-void updateOpGrid(PositionLetterDigit p, resultAttack res){
-	Position pos= toPosition(p);
+/**
+* \brief Methode de connexion au serveur choisi par le client
+*/
+void connexionAuServeur(){
 
-	if (res == WATER)
-		opGrid[pos.x][pos.y]=-1;
-	else if (res==TOUCH || res == SUNK || res == WIN)
-		opGrid[pos.x][pos.y]=-2;
-
-}
-
-void* prise_en_charge(int soc)
-{
-    char buffer[10];
-    
-   	int l = read(soc, buffer, sizeof(buffer));
-    if ( l < 0){
-        return NULL;
-    }
-
-    if (buffer[0]== '0'){
-
-    	resultAttack resA;
-    	memcpy(&resA, buffer+sizeof(char), sizeof(resultAttack));
-    	
-    	PositionLetterDigit p;
-
-		memcpy( &p.letter, buffer+sizeof(char)+sizeof(resultAttack), sizeof(char) );
-
-		char subbuff[3];
-		memcpy( subbuff, buffer+sizeof(resultAttack)+2*sizeof(char), 2 );
-		subbuff[2] = '\0';
-		p.y = atoi(subbuff);
-
-    	printf("Attaque en %c%d, resultat %s\n", p.letter, p.y, toString(resA));
-
-    	if (resA != REPEAT && resA!= ERROR){
+	if(sock_client != -1){
+		close(sock_client);
+		sock_client = -1;
+	}
 		
-    		updateOpGrid(p, resA);
-		
-    		printf("Grille de l'adversaire :\n");
-    		printOponentGrid(opGrid);
-
-			if (resA==WIN){
-				printf("Vous avez gagné.\n");
-				exit(0);
-			}
-
-			printf("Attente de l'attaque de l'adversaire...\n");
-			prise_en_charge(soc);
-		}else{
-			printf("Attaque incorrecte, reessayez.\n");
-			lanceAttack(soc);	
-		}
-    	
-    }else if (buffer[0] =='1'){
-
-		PositionLetterDigit p;
-		p.letter = buffer[1];
-		char subbuff[3];
-		memcpy( subbuff, &buffer[2], 2 );
-		subbuff[2] = '\0';
-		p.y = atoi(subbuff);
-
-		resultAttack resA= attack(&grid, p);
-
-		printf("Attaqué en %c%d, resultat %s\n", p.letter, p.y, toString(resA));
-
-		char res[10];
-		res[0]= '0';
-		memcpy(res+sizeof(char), &resA, sizeof(resultAttack));
-		memcpy(res+sizeof(char)+sizeof(resultAttack), buffer+sizeof(char), 3*sizeof(char));
-	
-		write(soc, res, 10);
-
-		if (resA != REPEAT && resA!= ERROR){
-			if (resA==WIN){
-				printf("Vous avez perdu.\n");
-				exit(0);
-			}
-			printf("Votre grille :\n");
-			printGrid(grid);
-			lanceAttack(soc); 
-		}else{
-			prise_en_charge(soc);
-		}
-    }
-    
-}
-
-void byebye(void){
-
-	/*sockaddr_in *tmp = (sockaddr_in*) (ad);
-	sockaddr_in adresse_locale = (sockaddr_in) (*tmp) ;*/
-	
-	int socket_descriptor;
-	char buffer[2560];
-	/* creation de la socket */
-	if ((socket_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+	//Creation de la socket serveur
+    if ((serveur = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		perror("erreur : impossible de creer la socket de connexion avec le serveur.");
 		exit(1);
-	}
-	
-	/* tentative de connexion au serveur dont les infos sont dans adresse_locale */
-	if ((connect(socket_descriptor, (sockaddr*)(&adresse_locale_globale), sizeof(adresse_locale_globale))) < 0) {
+    }
+
+	//Tentative de connexion au serveur dont les infos sont dans adresse_locale
+    if ((connect(serveur, (sockaddr*)(&adresse_locale), sizeof(adresse_locale))) < 0) {
 		perror("erreur : impossible de se connecter au serveur.");
 		exit(1);
-	}
+    }
+    
+    printf("Connexion au serveur établie. \n");
+    
+	tb.idTrame=-1;
+    tb.finish=false;
+
+	//Creation du thread d'ecoute pour le client
+	pthread_t thread_listen;
+    if (pthread_create(&thread_listen, NULL, ecoute, NULL)){
+        perror("Impossible creer thread listen");
+        exit(-1);
+    }
+    
+    //Boucle infinie d'attaque
+    while(1){
+    	lanceAttaque(serveur);
+    }
 	
-	/* envoi du message vers le serveur */
-	char buf[4] = "2";
-	
-	if ((write(socket_descriptor, buf, 4)) < 0) {
-		perror("erreur suppr client : impossible d'ecrire le message destine au serveur.");
-		exit(1);
-	}else{
-		printf("\nVous êtes désormais déconnecté(e) du serveur.\n");
+	if (pthread_join(thread_listen, NULL)){
+        perror("Impossible joindre thread");
+        exit(-1);
+    }
+}
+
+/**
+* \brief Methode du thread d'ecoute, le client attend de recevoir des messages
+*/
+void* ecoute(){
+
+	//Buffer pour la reception des messages
+    char buffer[TAILLE_MAX_TRAME];
+    
+    while(1){
+
+		if (recv(serveur, buffer, sizeof(buffer), 0) >= 0){
+		
+			//"Decodage" de la trame recue
+			Trame t = deserializeTrame(buffer);
+			receveTrame(&tb, t);
+			
+			//Si toutes les trames ont ete recues, on traite le message dans son entierete
+			if (tb.finish){
+			
+				if(tb.data[0] == '-'){					//code pour serveur hors-ligne
+					printf("%s\n",buffer);
+					exit(0);
+
+				}else if (tb.data[0]== '0'){			//code pour arrivee sur le serveur
+					
+				    ResponseGet res = deserializeResponseGet(tb.data);
+				    printf("%s",res.msg);
+				    printf("Grille du serveur :\n");
+				    printOponentGrid(res.grid);
+				    printf("\nChoisissez des coordonnées d'attaque: \n");
+				    
+				}else if(tb.data[0]== '1'){				//code pour resultat d'attaque
+				
+				    ResponseAttack res = deserializeResponseAttack(tb.data);
+				    printf("%s a attaqué en %s.\nLe résultat est : %s.\n", inet_ntoa(res.who), res.pos, toString(res.result));
+				    printf("Grille du serveur :\n");
+				    printOponentGrid(res.grid);
+				    printf("\nChoisissez des coordonnées d'attaque: \n");
+
+				}else{
+					printf("%s",buffer);
+				}
+			}
+		}else{
+			perror("recv()");
+			continue;
+		}
 	}
 }
 
-void ctrlC_Handler(int e) {
+/**
+* \brief Methode appelee lorsque le programme client se termine
+*/
+void byebye(void){
+	printf("\nVous êtes désormais déconnecté(e).\n");
+	
+	//On previent le serveur que l'on quitte la partie
+	if(send(serveur, "-", 2, 0) < 0){
+		perror("send()");
+		exit(-1);
+	}
+	
+	//Fermeture des sockets
+	close(serveur);
+	close(sock_client);
+}
+
+/**
+* \brief Redirection d'une fermeture de programme par la commande "Ctrl+c" vers la methode "byebye"
+* \param[in] e
+*/
+void ctrlC_Handler(int e){
     exit(0);
 }
 
-int main(int argc, char **argv) {
+/**
+* \brief Main, creation de la connexion vers le serveur
+* \param[in] argc
+* \param[in] *argv adresse du serveur
+* \return exit(0)
+*/
+int main(int argc, char **argv){
   
-    int socket_descriptor; 		/* descripteur de socket */
-	int longueur; 				/* longueur d'un buffer utilisé */
-    hostent * ptr_host; 		/* info sur une machine hote */
-    servent * ptr_service; 		/* info sur service */
-    char buffer[2560];
+    hostent * hostinfo; 		/* info sur une machine hote */
     char * prog; 				/* nom du programme */
     char * host; 				/* nom de la machine distante */
   
@@ -200,7 +172,7 @@ int main(int argc, char **argv) {
     signal(SIGINT, ctrlC_Handler);
       
     if (argc != 2) {
-		perror("usage : client <adresse-serveur>");
+		perror("usage : ./client.exe <adresse-serveur>");
 		exit(1);
     }
    
@@ -210,155 +182,18 @@ int main(int argc, char **argv) {
     printf("nom de l'executable : %s \n", prog);
     printf("adresse du serveur  : %s \n", host);
     
-    if ((ptr_host = gethostbyname(host)) == NULL) {
+    if ((hostinfo = gethostbyname(host)) == NULL) {
 		perror("erreur : impossible de trouver le serveur a partir de son adresse.");
 		exit(1);
     }
     
-    bcopy((char*)ptr_host->h_addr, (char*)&adresse_locale_globale.sin_addr, ptr_host->h_length);
-    adresse_locale_globale.sin_family = AF_INET;
+    adresse_locale.sin_addr = *(in_addr *) hostinfo->h_addr;
+	adresse_locale.sin_port = htons(5000);
+	adresse_locale.sin_family = AF_INET;
+
+    printf("Numero de port pour la connexion au serveur : %d \n", ntohs(adresse_locale.sin_port));
     
-    adresse_locale_globale.sin_port = htons(5000);
-
-    printf("numero de port pour la connexion au serveur : %d \n", ntohs(adresse_locale_globale.sin_port));
-    
-    /* creation de la socket */
-    if ((socket_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		perror("erreur : impossible de creer la socket de connexion avec le serveur.");
-		exit(1);
-    }
-    
-    /* tentative de connexion au serveur dont les infos sont dans adresse_locale_globale */
-    if ((connect(socket_descriptor, (sockaddr*)(&adresse_locale_globale), sizeof(adresse_locale_globale))) < 0) {
-		perror("erreur : impossible de se connecter au serveur.");
-		exit(1);
-    }
-    
-    srand(time(NULL));
-    init(&grid);
-    reinitOponentGrid();
-    
-    printf("envoi d'un message getoponent au serveur. \n");
-      
-    /* envoi du message vers le serveur */
-    if ((write(socket_descriptor, "", 2)) < 0) {
-		perror("erreur : impossible d'ecrire le message destine au serveur.");
-        exit(1);
-    }
-    
-    char oponent[50] ="";
-    if ((read(socket_descriptor, oponent, 50)) < 0) {
-		perror("erreur : impossible de lire le message du serveur.");
-        exit(1);
-    }
-
-    int soc;
-    
-    if (strcmp(oponent, "game")==0){
-
-    	sockaddr_in ad;
-    	
-		char machine[TAILLE_MAX_NOM+1]; 		/* nom de la machine locale */
-		hostent* ptr_hote; 	
-		
-		gethostname(machine,TAILLE_MAX_NOM);	/* recuperation du nom de la machine */
-
-		/* recuperation de la structure d'adresse en utilisant le nom */
-		if ((ptr_hote = gethostbyname(machine)) == NULL) {
-			perror("erreur : impossible de trouver le serveur a partir de son nom.");
-			exit(1);
-		}
-		
-		bcopy((char*)ptr_hote->h_addr, (char*)&ad, ptr_hote->h_length);
-		ad.sin_family		= ptr_hote->h_addrtype; 			/* ou AF_INET */
-		ad.sin_addr.s_addr	= INADDR_ANY; 						/* ou AF_INET */
-
-		ad.sin_port = htons(PORT_CLIENT);
-
-    	/* creation de la socket */
-	    if ((soc = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-	        perror("erreur : impossible de creer la socket de connexion avec le client.");
-	        exit(1);
-	    }
-
-	    int reuse = 1;
-		setsockopt(soc, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
-
-	    /* association du socket soc à la structure d'adresse adresse_locale */
-	    if ((bind(soc, (sockaddr*)(&(ad)), sizeof(ad))) < 0) {
-	        perror("erreur : impossible de lier la socket a l'adresse de connexion.");
-	        exit(1);
-	    }
-	    
-	    /* initialisation de la file d'ecoute */
-	    listen(soc,1);
-
-		sockaddr_in adresse_client_courant;
-	    
-	    int longueur_adresse_courante = sizeof(adresse_client_courant);
-	    int nouv_soc;
-
-		printf("Attente de joueur...\n");
-        /* adresse_client_courant sera renseigné par accept via les infos du connect */
-        //for (;;){
-	        if ((nouv_soc = 
-	            accept(soc, 
-	                   (sockaddr*)(&adresse_client_courant),
-	                   &longueur_adresse_courante))
-	             < 0) {
-	            perror("erreur : impossible d'accepter la connexion avec le client.");
-	            exit(1);
-	        }
-
-	        printf("Votre grille :\n");
-    		printGrid(grid);
-    		printf("Grille de l'adversaire :\n");
-    		printOponentGrid(opGrid);
-
-		printf("Attente de l'attaque de l'adversaire...\n");
-
-        	prise_en_charge(nouv_soc);
-        //}
-
-    }else{
-    	printf("Vous jouez contre %s\n", oponent);
-    	sockaddr_in ad;
-    	hostent * ptr_host; 		/* info sur une machine hote */
-    	
-    	if ((ptr_host = gethostbyname(oponent)) == NULL) {
-			perror("erreur : impossible de trouver le serveur a partir de son adresse.");
-			exit(1);
-		}
-		
-		/* copie caractere par caractere des infos de ptr_host vers adresse_locale_globale */
-		bcopy((char*)ptr_host->h_addr, (char*)&ad.sin_addr, ptr_host->h_length);
-		ad.sin_family = AF_INET; /* ou ptr_host->h_addrtype; */
-		
-		ad.sin_port = htons(PORT_CLIENT);
-
-		printf("numero de port pour la connexion à l'autre joueur : %d \n", ntohs(ad.sin_port));
-		
-		if ((soc = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-			perror("erreur : impossible de creer la socket de connexion avec le serveur.");
-			exit(1);
-		}
-		
-		if ((connect(soc, (sockaddr*)(&ad), sizeof(ad))) < 0) {
-			perror("erreur : impossible de se connecter au serveur.");
-			exit(1);
-		}
-
-		printf("Votre grille :\n");
-    		printGrid(grid);
-		printf("Grille de l'adversaire :\n");
-		printOponentGrid(opGrid);
-		
-		lanceAttack(soc);
-		
-   	}
-    close(soc);
-    close(socket_descriptor);
-    
+  	connexionAuServeur();
+	
     exit(0);
-    
 }
